@@ -1,0 +1,19 @@
+{
+  "name": "Agenda Isidora",
+  "short_name": "Isidora",
+  "description": "Agenda personal con rutinas, eventos, medicamentos y recordatorios.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#FBF7F1",
+  "theme_color": "#D6336C",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
