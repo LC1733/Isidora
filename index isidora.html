@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="es" data-tema="auto">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Isidora · Agenda</title>
+<meta name="description" content="Agenda personal con rutina semanal, eventos, recordatorios y registro de cumplimiento. Funciona sin conexión.">
+<meta name="apple-mobile-web-app-title" content="Isidora">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#D6336C">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --fondo:#FBF7F1;
+  --tarjeta:#FFFFFF;
+  --tarjeta2:#F4ECE1;
+  --linea:#E6DACA;
+  --texto:#2A2521;
+  --gris:#857A6E;
+  --acento:#D6336C;
+  --sobre-acento:#FFFFFF;
+  --acento-suave:rgba(214,51,108,.10);
+  --tinta:#0F766E;
+  --tinta-suave:rgba(15,118,110,.11);
+  --extra:#6741D9;
+  --extra-suave:rgba(103,65,217,.10);
+  --alerta:#C2410C;
+  color-scheme:light;
+}
+[data-tema="claro"]{
+  --fondo:#FBF7F1;
+  --tarjeta:#FFFFFF;
+  --tarjeta2:#F4ECE1;
+  --linea:#E6DACA;
+  --texto:#2A2521;
+  --gris:#857A6E;
+  --acento:#D6336C;
+  --sobre-acento:#FFFFFF;
+  --acento-suave:rgba(214,51,108,.10);
+  --tinta:#0F766E;
+  --tinta-suave:rgba(15,118,110,.11);
+  --extra:#6741D9;
+  --extra-suave:rgba(103,65,217,.10);
+  --alerta:#C2410C;
+  color-scheme:light;
+}
+[data-tema="oscuro"]{
+  --fondo:#1B1618;
+  --tarjeta:#251E22;
+  --tarjeta2:#2F262B;
+  --linea:#3D3138;
+  --texto:#F3EAE4;
+  --gris:#A2928C;
+  --acento:#F06595;
+  --sobre-acento:#2A0E1B;
+  --acento-suave:rgba(240,101,149,.14);
+  --tinta:#3ECFB8;
+  --tinta-suave:rgba(62,207,184,.13);
+  --extra:#B197FC;
+  --extra-suave:rgba(177,151,252,.14);
+  --alerta:#FB923C;
+  color-scheme:dark;
+}
+
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--fondo);color:var(--texto);
+  font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;transition:background .2s,color .2s}
+.app{max-width:720px;margin:0 auto;padding:20px 16px 96px}
+
+/* ---------- Cabecera ---------- */
+header{margin-bottom:14px}
+.eyebrow{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--acento)}
+h1{font-family:'Bricolage Grotesque','Inter',sans-serif;font-weight:800;font-size:clamp(27px,6.5vw,38px);line-height:1.05;margin-top:4px;letter-spacing:-.015em}
+h1 .marca{color:var(--acento)}
+.sub{color:var(--gris);font-size:13.5px;margin-top:5px}
+
+/* ---------- Cinta del día (elemento firma) ---------- */
+.cinta{position:relative;height:46px;margin-top:16px;border-radius:12px;background:var(--tarjeta2);
+  border:1px solid var(--linea);overflow:hidden}
+.cinta-base{position:absolute;left:0;right:0;top:26px;height:1px;background:var(--linea)}
+.cinta-h{position:absolute;top:29px;transform:translateX(-50%);font-family:'JetBrains Mono',monospace;
+  font-size:9.5px;color:var(--gris);letter-spacing:.04em}
+.cinta-tick{position:absolute;top:22px;width:1px;height:5px;background:var(--linea)}
+.cinta-pto{position:absolute;top:12px;width:9px;height:9px;border-radius:50%;transform:translateX(-50%);
+  border:2px solid var(--fondo)}
+.cinta-pto.rutina{background:var(--tinta)}
+.cinta-pto.evento{background:var(--extra)}
+.cinta-pto.med{background:var(--acento)}
+.cinta-pto.ok{opacity:.3}
+.cinta-ahora{position:absolute;top:4px;bottom:14px;width:2px;background:var(--acento);transform:translateX(-1px);border-radius:2px}
+.cinta-ahora::before{content:'';position:absolute;top:-3px;left:-3px;width:8px;height:8px;border-radius:50%;background:var(--acento)}
+.cinta-vacia{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--gris);font-size:12.5px}
+
+/* ---------- Navegación ---------- */
+nav{position:fixed;bottom:0;left:0;right:0;z-index:60;background:var(--tarjeta);border-top:1px solid var(--linea);
+  display:flex;justify-content:center;gap:2px;padding:6px 8px calc(6px + env(safe-area-inset-bottom))}
+nav button{flex:1;max-width:160px;border:none;background:none;cursor:pointer;font-family:'Inter',sans-serif;
+  font-size:12.5px;font-weight:600;color:var(--gris);padding:10px 2px;border-radius:11px;transition:background .15s,color .15s}
+nav button:focus-visible{outline:2px solid var(--acento);outline-offset:2px}
+nav button.activa{background:var(--acento);color:var(--sobre-acento)}
+
+/* ---------- Bloques ---------- */
+section{display:none}
+section.visible{display:block}
+.tarjeta{background:var(--tarjeta);border:1px solid var(--linea);border-radius:15px;padding:16px;margin-bottom:12px}
+.tarjeta h2{font-family:'Bricolage Grotesque','Inter',sans-serif;font-size:17px;font-weight:600;margin-bottom:10px;
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pill{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  padding:2px 9px;border-radius:20px;background:var(--acento-suave);color:var(--acento)}
+.nota{font-size:12.5px;color:var(--gris);margin-top:10px;line-height:1.45}
+.vacio{color:var(--gris);font-size:13.5px;padding:16px 2px;text-align:center;line-height:1.5}
+
+/* ---------- Medicamentos ---------- */
+.med-grid{display:flex;gap:10px}
+.med{flex:1;background:var(--tarjeta2);border:1.5px solid var(--linea);border-radius:13px;padding:13px 10px;
+  cursor:pointer;text-align:center;transition:border-color .15s,background .15s;user-select:none}
+.med:focus-visible{outline:2px solid var(--acento);outline-offset:2px}
+.med .icono{font-size:24px;line-height:1}
+.med .lbl{font-weight:700;font-size:14.5px;margin-top:3px}
+.med .cuando{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--gris);margin-top:2px}
+.med .estado-med{font-size:11.5px;margin-top:6px;color:var(--gris);line-height:1.35}
+.med.tomado{border-color:var(--acento);background:var(--acento-suave)}
+.med.tomado .estado-med{color:var(--acento);font-weight:700}
+
+/* ---------- Timeline ---------- */
+.tl-item{display:flex;gap:11px;align-items:flex-start;padding:10px 2px;border-bottom:1px solid var(--linea)}
+.tl-item:last-child{border-bottom:none}
+.tl-hora{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--tinta);flex:none;width:50px;padding-top:3px}
+.tl-hora.pasada{color:var(--gris)}
+.tl-check{flex:none;width:23px;height:23px;margin-top:2px;border-radius:8px;border:2px solid var(--gris);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;background:none;transition:background .15s,border-color .15s}
+.tl-check:focus-visible{outline:2px solid var(--acento);outline-offset:2px}
+.tl-item.hecho .tl-check{background:var(--acento);border-color:var(--acento)}
+.tl-item.hecho .tl-check::after{content:'✓';color:var(--sobre-acento);font-size:13px;font-weight:800}
+.tl-cuerpo{flex:1;min-width:0}
+.tl-texto{word-break:break-word}
+.tl-item.hecho .tl-texto{opacity:.45;text-decoration:line-through}
+.tl-tipo{font-size:10px;font-weight:700;letter-spacing:.05em;padding:1px 8px;border-radius:20px;margin-left:6px;white-space:nowrap}
+.tl-tipo.rutina{background:var(--tinta-suave);color:var(--tinta)}
+.tl-tipo.evento{background:var(--extra-suave);color:var(--extra)}
+.tl-omitir{border:none;background:none;color:var(--gris);cursor:pointer;font-size:11.5px;font-weight:600;
+  padding:3px 7px;border-radius:7px;flex:none;align-self:center}
+.tl-omitir:hover{color:var(--acento);background:var(--acento-suave)}
+.progreso-linea{height:8px;border-radius:4px;background:var(--tarjeta2);overflow:hidden;margin-top:6px}
+.progreso-linea>div{height:100%;background:var(--acento);border-radius:4px;transition:width .3s}
+.progreso-num{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--gris);margin-top:5px}
+
+/* ---------- Planificador ---------- */
+.dias-tabs{display:flex;gap:5px;margin-bottom:12px}
+.dias-tabs button{flex:1;border:1.5px solid var(--linea);background:none;border-radius:10px;padding:9px 2px;
+  font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--gris);cursor:pointer;position:relative}
+.dias-tabs button.sel{border-color:var(--tinta);color:var(--tinta);background:var(--tinta-suave)}
+.dias-tabs button.hoy-tab::after{content:'';position:absolute;bottom:4px;left:50%;transform:translateX(-50%);
+  width:4px;height:4px;border-radius:50%;background:var(--acento)}
+.fila{display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid var(--linea)}
+.fila:last-child{border-bottom:none}
+.fila-hora{font-family:'JetBrains Mono',monospace;font-size:13.5px;font-weight:600;color:var(--tinta);flex:none;width:52px}
+.fila-hora.violeta{color:var(--extra);width:auto;min-width:64px}
+.fila-texto{flex:1;min-width:0;word-break:break-word}
+.fila-marca{font-size:11px;color:var(--gris);font-family:'JetBrains Mono',monospace}
+.icon-btn{border:none;background:none;color:var(--gris);cursor:pointer;font-size:17px;padding:3px 8px;border-radius:7px;flex:none;line-height:1}
+.icon-btn:hover{color:var(--alerta);background:var(--acento-suave)}
+.icon-btn:focus-visible{outline:2px solid var(--acento);outline-offset:1px}
+
+/* ---------- Formularios ---------- */
+.form-linea{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center}
+input[type=time],input[type=date],input[type=text],select{
+  font-family:'Inter',sans-serif;font-size:14px;border:1.5px solid var(--linea);border-radius:10px;
+  padding:10px 11px;background:var(--tarjeta2);color:var(--texto)}
+input[type=time],input[type=date]{font-family:'JetBrains Mono',monospace;font-size:13px}
+input[type=text]{flex:1;min-width:150px}
+input:focus,select:focus{outline:2px solid var(--acento);outline-offset:1px;border-color:var(--acento)}
+input::placeholder{color:var(--gris);opacity:.75}
+.btn{font-family:'Inter',sans-serif;font-size:14px;font-weight:700;cursor:pointer;border-radius:11px;
+  padding:11px 18px;border:none;background:var(--acento);color:var(--sobre-acento);transition:transform .1s}
+.btn:active{transform:scale(.97)}
+.btn:focus-visible{outline:2px solid var(--texto);outline-offset:2px}
+.btn.chico{padding:9px 14px;font-size:13px}
+.btn.fantasma{background:none;border:1.5px solid var(--linea);color:var(--texto)}
+.btn.fantasma:hover{border-color:var(--acento)}
+.btn-fila{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+
+/* ---------- Ajustes ---------- */
+.cfg-fila{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:11px}
+.cfg-fila label{font-weight:600;font-size:14px;flex:none;width:118px}
+.seg{display:flex;gap:4px;background:var(--tarjeta2);padding:4px;border-radius:11px;border:1px solid var(--linea)}
+.seg button{border:none;background:none;cursor:pointer;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;
+  color:var(--gris);padding:7px 13px;border-radius:8px}
+.seg button.sel{background:var(--acento);color:var(--sobre-acento)}
+.interruptor{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 0}
+.sw{position:relative;width:46px;height:27px;flex:none;border-radius:20px;background:var(--linea);border:none;cursor:pointer;transition:background .18s}
+.sw::after{content:'';position:absolute;top:3px;left:3px;width:21px;height:21px;border-radius:50%;background:#fff;transition:transform .18s}
+.sw[aria-checked="true"]{background:var(--acento)}
+.sw[aria-checked="true"]::after{transform:translateX(19px)}
+.sw:focus-visible{outline:2px solid var(--acento);outline-offset:2px}
+.aviso{display:flex;align-items:center;gap:10px;background:var(--acento-suave);border:1px solid var(--acento);
+  border-radius:11px;padding:11px 13px;margin-bottom:12px;font-size:13px;line-height:1.4}
+.aviso.gris{background:var(--tarjeta2);border-color:var(--linea)}
+.ok-msg{color:var(--acento);font-size:13px;font-weight:700;margin-left:10px;opacity:0;transition:opacity .3s}
+.ok-msg.ver{opacity:1}
+
+/* ---------- Historial ---------- */
+.racha-caja{display:flex;gap:10px;margin-bottom:12px}
+.racha-caja .tarjeta{flex:1;text-align:center;margin-bottom:0;padding:14px 8px}
+.racha-num{font-family:'Bricolage Grotesque','Inter',sans-serif;font-size:31px;font-weight:800;color:var(--acento);line-height:1}
+.racha-lbl{font-size:10.5px;color:var(--gris);text-transform:uppercase;letter-spacing:.06em;font-weight:600;margin-top:5px}
+.hist-dia{display:flex;align-items:center;gap:9px;padding:8px 2px;border-bottom:1px solid var(--linea)}
+.hist-dia:last-child{border-bottom:none}
+.hist-fecha{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--gris);flex:none;width:92px}
+.hist-meds{flex:none;width:44px;font-size:13px;letter-spacing:2px;text-align:center}
+.hist-barra{flex:1;height:9px;border-radius:5px;background:var(--tarjeta2);overflow:hidden}
+.hist-barra>div{height:100%;border-radius:5px;background:var(--tinta)}
+.hist-pct{font-family:'JetBrains Mono',monospace;font-size:12px;flex:none;width:42px;text-align:right;font-weight:600}
+
+/* ---------- Banner de aviso en pantalla ---------- */
+.banner{position:fixed;left:12px;right:12px;top:calc(12px + env(safe-area-inset-top));z-index:100;
+  background:var(--acento);color:var(--sobre-acento);border-radius:13px;padding:13px 15px;
+  box-shadow:0 10px 30px rgba(0,0,0,.28);display:none;align-items:flex-start;gap:11px;max-width:696px;margin:0 auto}
+.banner.ver{display:flex}
+.banner-t{font-weight:800;font-size:14.5px}
+.banner-c{font-size:13.5px;margin-top:2px;line-height:1.35}
+.banner button{border:none;background:none;color:var(--sobre-acento);font-size:19px;cursor:pointer;
+  padding:0 2px;line-height:1;flex:none;opacity:.75}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media (max-width:430px){
+  .app{padding:16px 12px 96px}
+  .dias-tabs button{font-size:12px;padding:8px 1px}
+  .cfg-fila label{width:100%}
+  .hist-fecha{width:78px;font-size:11.5px}
+}
+</style>
+</head>
+<body>
+
+<div class="banner" id="banner" role="status" aria-live="polite">
+  <div style="flex:1"><div class="banner-t" id="bannerT"></div><div class="banner-c" id="bannerC"></div></div>
+  <button id="bannerX" aria-label="Cerrar aviso">×</button>
+</div>
+
+<div class="app">
+
+  <header>
+    <div class="eyebrow" id="fechaEyebrow">—</div>
+    <h1 id="saludo">Hola</h1>
+    <div class="sub">Escribe la semana una vez y deja la cabeza libre para lo demás.</div>
+    <div class="cinta" id="cinta"></div>
+  </header>
+
+  <!-- ============ HOY ============ -->
+  <section id="sec-hoy" class="visible">
+    <div class="tarjeta" id="tarjetaMeds">
+      <h2>Medicamentos <span class="pill">lo primero</span></h2>
+      <div class="med-grid">
+        <div class="med" id="medAM" role="checkbox" aria-checked="false" tabindex="0">
+          <div class="icono">🌅</div><div class="lbl">Mañana</div>
+          <div class="cuando" id="medAMHora">08:00</div>
+          <div class="estado-med" id="medAMEstado">Pendiente</div>
+        </div>
+        <div class="med" id="medPM" role="checkbox" aria-checked="false" tabindex="0">
+          <div class="icono">🌙</div><div class="lbl">Noche</div>
+          <div class="cuando" id="medPMHora">21:00</div>
+          <div class="estado-med" id="medPMEstado">Pendiente</div>
+        </div>
+      </div>
+      <div class="nota">Los horarios y nombres se cambian en Ajustes. Para que la alarma suene con la app cerrada, usa <strong>Pasar todo al calendario</strong> en Ajustes.</div>
+    </div>
+
+    <div class="tarjeta">
+      <h2>Agenda de hoy</h2>
+      <div class="progreso-linea"><div id="progresoBarra" style="width:0%"></div></div>
+      <div class="progreso-num" id="progresoNum">—</div>
+      <div id="timelineHoy" style="margin-top:8px"></div>
+    </div>
+  </section>
+
+  <!-- ============ PLANIFICAR ============ -->
+  <section id="sec-plan">
+    <div class="tarjeta">
+      <h2>Rutina semanal <span class="pill">se repite</span></h2>
+      <p class="nota" style="margin-top:0;margin-bottom:10px">Elige un día y agrega lo que se repite cada semana: clases, trabajo, gimnasio, estudio. Aparece solo en tu agenda.</p>
+      <div class="dias-tabs" id="diasTabs">
+        <button data-d="1">Lun</button><button data-d="2">Mar</button><button data-d="3">Mié</button>
+        <button data-d="4">Jue</button><button data-d="5">Vie</button><button data-d="6">Sáb</button><button data-d="0">Dom</button>
+      </div>
+      <div id="listaRutina"></div>
+      <div class="form-linea">
+        <input type="time" id="rHora" value="09:00" aria-label="Hora de la actividad">
+        <input type="text" id="rTexto" placeholder="Ej: gimnasio, clase de inglés, turno…" maxlength="80">
+        <button class="btn chico" id="btnAgregarRutina">Agregar</button>
+      </div>
+      <div class="form-linea">
+        <span style="font-size:13px;color:var(--gris)">Copiar este día a:</span>
+        <select id="selCopiar" aria-label="Día de destino">
+          <option value="1">lunes</option><option value="2">martes</option><option value="3">miércoles</option>
+          <option value="4">jueves</option><option value="5">viernes</option><option value="6">sábado</option><option value="0">domingo</option>
+        </select>
+        <button class="btn fantasma chico" id="btnCopiarDia">Copiar</button>
+        <span class="ok-msg" id="okCopiar">Copiado ✓</span>
+      </div>
+    </div>
+
+    <div class="tarjeta">
+      <h2>Eventos puntuales <span class="pill">una sola vez</span></h2>
+      <p class="nota" style="margin-top:0;margin-bottom:6px">Con fecha propia: hora al médico, cumpleaños, una entrega, un trámite.</p>
+      <div id="listaEventos"></div>
+      <div class="form-linea">
+        <input type="date" id="eFecha" aria-label="Fecha del evento">
+        <input type="time" id="eHora" aria-label="Hora del evento (opcional)">
+      </div>
+      <div class="form-linea">
+        <input type="text" id="eTexto" placeholder="Qué y dónde…" maxlength="100">
+        <button class="btn chico" id="btnAgregarEvento">Agregar</button>
+      </div>
+    </div>
+
+    <div class="tarjeta" id="tarjetaVencidos" style="display:none">
+      <h2>Sin marcar <span class="pill">ya pasaron</span></h2>
+      <div id="listaVencidos"></div>
+    </div>
+
+    <div class="tarjeta" id="tarjetaOmitidos" style="display:none">
+      <h2>Días omitidos</h2>
+      <div id="listaOmitidos"></div>
+    </div>
+  </section>
+
+  <!-- ============ HISTORIAL ============ -->
+  <section id="sec-historial">
+    <div class="racha-caja">
+      <div class="tarjeta" id="cajaRacha"><div class="racha-num" id="rachaMeds">0</div><div class="racha-lbl">Días seguidos con los medicamentos al día</div></div>
+      <div class="tarjeta"><div class="racha-num" id="promActividades">—</div><div class="racha-lbl">Cumplimiento últimos 7 días</div></div>
+    </div>
+    <div class="tarjeta">
+      <h2>Últimos 14 días</h2>
+      <p class="nota" style="margin-top:0;margin-bottom:6px">Cada día guarda su propio plan: editar la rutina hoy no cambia el pasado. Un día sin registro aparece como “—”.</p>
+      <div id="listaHistorial"></div>
+    </div>
+  </section>
+
+  <!-- ============ AJUSTES ============ -->
+  <section id="sec-ajustes">
+    <div class="aviso" id="avisoNotif" style="display:none">
+      <span>🔔</span><span style="flex:1">Activa las notificaciones para recibir los avisos.</span>
+      <button class="btn chico" id="btnNotif">Activar</button>
+    </div>
+    <div class="aviso" id="avisoRespaldo" style="display:none">
+      <span>💾</span><span style="flex:1">Han pasado más de dos semanas desde tu último respaldo.</span>
+      <button class="btn chico" id="btnRespaldoAviso">Descargar</button>
+    </div>
+    <div class="aviso gris" id="avisoAlmac" style="display:none">
+      <span>⚠️</span><span style="flex:1" id="avisoAlmacTxt"></span>
+    </div>
+
+    <div class="tarjeta">
+      <h2>Alarmas confiables <span class="pill">recomendado</span></h2>
+      <p class="nota" style="margin-top:0">Una página web solo puede avisar mientras está abierta. Para que suene con el teléfono bloqueado, pasa todo al calendario: se crean series repetidas con alarma propia del sistema.</p>
+      <div class="btn-fila">
+        <button class="btn" id="btnICS">📅 Pasar todo al calendario</button>
+      </div>
+    </div>
+
+    <div class="tarjeta">
+      <h2>Apariencia</h2>
+      <div class="cfg-fila">
+        <label>Tema</label>
+        <div class="seg" id="segTema">
+          <button data-t="auto">Automático</button><button data-t="claro">Claro</button><button data-t="oscuro">Oscuro</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="tarjeta">
+      <h2>Medicamentos</h2>
+      <div class="interruptor">
+        <span style="font-size:14px;font-weight:600">Mostrar el módulo de medicamentos</span>
+        <button class="sw" id="swMeds" role="switch" aria-checked="true" aria-label="Mostrar el módulo de medicamentos"></button>
+      </div>
+      <div id="bloqueMeds">
+        <div class="cfg-fila"><label for="cfgMedAMHora">Hora mañana</label><input type="time" id="cfgMedAMHora" value="08:00"></div>
+        <div class="cfg-fila"><label for="cfgMedAMNombre">Nombre</label><input type="text" id="cfgMedAMNombre" placeholder="Opcional, queda en este dispositivo" maxlength="60"></div>
+        <div class="cfg-fila"><label for="cfgMedPMHora">Hora noche</label><input type="time" id="cfgMedPMHora" value="21:00"></div>
+        <div class="cfg-fila"><label for="cfgMedPMNombre">Nombre</label><input type="text" id="cfgMedPMNombre" placeholder="Opcional, queda en este dispositivo" maxlength="60"></div>
+        <button class="btn chico" id="btnGuardarCfg">Guardar</button>
+        <span class="ok-msg" id="cfgOk">Guardado ✓</span>
+      </div>
+    </div>
+
+    <div class="tarjeta">
+      <h2>Respaldo</h2>
+      <p class="nota" style="margin-top:0">Los datos viven solo en este dispositivo. Descarga un respaldo antes de cambiar de teléfono o limpiar el navegador.</p>
+      <div class="btn-fila">
+        <button class="btn fantasma chico" id="btnDescargar">Descargar respaldo</button>
+        <button class="btn fantasma chico" id="btnRestaurar">Restaurar desde archivo</button>
+        <input type="file" id="fileRestaurar" accept="application/json,.json" style="display:none">
+      </div>
+      <div class="nota" id="txtRespaldo"></div>
+    </div>
+
+    <div class="tarjeta">
+      <h2>Sobre esta app</h2>
+      <p class="nota" style="margin-top:0">Isidora · versión <span id="verTxt"></span>. Funciona sin conexión una vez abierta. Nada se envía a ningún servidor: todo queda guardado en este dispositivo.</p>
+    </div>
+  </section>
+
+</div>
+
+<nav aria-label="Secciones">
+  <button class="activa" data-sec="hoy">Hoy</button>
+  <button data-sec="plan">Planificar</button>
+  <button data-sec="historial">Historial</button>
+  <button data-sec="ajustes">Ajustes</button>
+</nav>
+
+<script>
+window.__MARCA__={"id": "isidora", "nombre": "Isidora", "ns": "isidora", "temaDefecto": "claro", "medsDefecto": true, "version": "2.0"};
+</script>
+<script>
+(function(){
+'use strict';
+
+var M = window.__MARCA__;
+var VERSION_DATOS = 3;
+var VENTANA = 10;              // minutos de tolerancia para los avisos
+var DIAS_RESPALDO = 14;
+
+/* ================= Utilidades de fecha ================= */
+function fechaISO(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function hoyISO(){return fechaISO(new Date());}
+function hhmmAhora(){var d=new Date();return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
+function aMin(hhmm){if(!hhmm)return null;var p=hhmm.split(':');return Number(p[0])*60+Number(p[1]);}
+function desdeISO(iso){var p=iso.split('-');return new Date(Number(p[0]),Number(p[1])-1,Number(p[2]));}
+function idNuevo(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+
+/* ================= Persistencia en cascada ================= */
+var Store=(function(){
+  var pre=M.ns+':', mem={}, hayLocal=false, hayClaude=false;
+  function probarLocal(){try{localStorage.setItem(pre+'__t','1');localStorage.removeItem(pre+'__t');return true;}catch(e){return false;}}
+  function init(){
+    hayClaude=!!(window.storage&&typeof window.storage.get==='function');
+    hayLocal=probarLocal();
+  }
+  function modo(){return hayLocal?'local':(hayClaude?'claude':'memoria');}
+  async function leer(k){
+    var s=null;
+    if(hayLocal){try{s=localStorage.getItem(pre+k);}catch(e){hayLocal=false;}}
+    if(s===null&&hayClaude){try{var r=await window.storage.get(pre+k);if(r&&r.value)s=r.value;}catch(e){}}
+    if(s===null&&mem[k]!==undefined)s=mem[k];
+    if(s===null||s===undefined)return null;
+    try{return JSON.parse(s);}catch(e){return null;}
+  }
+  async function escribir(k,v){
+    var s;try{s=JSON.stringify(v);}catch(e){return false;}
+    mem[k]=s;var ok=false;
+    if(hayLocal){try{localStorage.setItem(pre+k,s);ok=true;}catch(e){hayLocal=false;}}
+    if(hayClaude){try{await window.storage.set(pre+k,s);ok=true;}catch(e){}}
+    return ok;
+  }
+  return {init:init,modo:modo,leer:leer,escribir:escribir};
+})();
+
+/* ================= Estado ================= */
+var D=null, guardarPend=null, diaMostrado=null, seccion='hoy';
+
+function datosNuevos(){
+  return {
+    version:VERSION_DATOS,
+    config:{tema:M.temaDefecto,medsOn:M.medsDefecto,
+      medAM:{hora:'08:00',nombre:''},medPM:{hora:'21:00',nombre:''},
+      ultimoRespaldo:null},
+    rutina:[], eventos:[], dias:{}
+  };
+}
+function migrar(d){
+  if(!d||typeof d!=='object')return datosNuevos();
+  var base=datosNuevos();
+  d.version=d.version||1;
+  d.config=Object.assign({},base.config,d.config||{});
+  d.config.medAM=Object.assign({},base.config.medAM,d.config.medAM||{});
+  d.config.medPM=Object.assign({},base.config.medPM,d.config.medPM||{});
+  d.rutina=Array.isArray(d.rutina)?d.rutina:[];
+  d.eventos=Array.isArray(d.eventos)?d.eventos:[];
+  d.dias=(d.dias&&typeof d.dias==='object')?d.dias:{};
+  d.rutina.forEach(function(r){if(!Array.isArray(r.omitir))r.omitir=[];r.id=String(r.id);});
+  d.eventos.forEach(function(e){e.id=String(e.id);
+    if(e.hecho){var dd=dia(e.fecha,d);dd.hechos['e'+e.id]=true;delete e.hecho;}});
+  d.version=VERSION_DATOS;
+  return d;
+}
+function dia(iso,cont){
+  var c=cont||D;
+  if(!c.dias[iso])c.dias[iso]={medAM:false,medPM:false,hechos:{},avisos:{},plan:null};
+  var x=c.dias[iso];
+  if(!x.hechos)x.hechos={};if(!x.avisos)x.avisos={};
+  return x;
+}
+function persistir(){
+  clearTimeout(guardarPend);
+  guardarPend=setTimeout(function(){Store.escribir('datos',D);},200);
+}
+
+/* ================= Items del día ================= */
+function itemsDeFecha(iso){
+  var ds=desdeISO(iso).getDay(), out=[];
+  D.rutina.forEach(function(r){
+    if(r.dia!==ds)return;
+    if((r.omitir||[]).indexOf(iso)>=0)return;
+    out.push({id:'r'+r.id,hora:r.hora,texto:r.texto,tipo:'rutina',ref:r});
+  });
+  D.eventos.forEach(function(e){
+    if(e.fecha!==iso)return;
+    out.push({id:'e'+e.id,hora:e.hora||'',texto:e.texto,tipo:'evento',ref:e});
+  });
+  out.sort(function(a,b){
+    var ha=a.hora||'99:99',hb=b.hora||'99:99';
+    return ha<hb?-1:ha>hb?1:0;
+  });
+  return out;
+}
+function sincronizarPlanHoy(){
+  var k=hoyISO(), d=dia(k);
+  d.plan=itemsDeFecha(k).map(function(i){return {id:i.id,texto:i.texto,hora:i.hora};});
+}
+function estaHecho(iso,id){return !!dia(iso).hechos[id];}
+
+/* ================= Sonido, banner y notificaciones ================= */
+var audioCtx=null;
+function prepararAudio(){
+  if(audioCtx)return;
+  try{audioCtx=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}
+  if(audioCtx&&audioCtx.state==='suspended'){try{audioCtx.resume();}catch(e){}}
+}
+document.addEventListener('pointerdown',prepararAudio,{once:true});
+document.addEventListener('keydown',prepararAudio,{once:true});
+
+function sonar(){
+  if(!audioCtx)prepararAudio();
+  if(!audioCtx)return;
+  try{
+    var t=audioCtx.currentTime;
+    [0,0.34].forEach(function(off){
+      var o=audioCtx.createOscillator(),g=audioCtx.createGain();
+      o.type='sine';o.frequency.value=920;
+      g.gain.setValueAtTime(0.0001,t+off);
+      g.gain.exponentialRampToValueAtTime(0.25,t+off+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+off+0.3);
+      o.connect(g);g.connect(audioCtx.destination);
+      o.start(t+off);o.stop(t+off+0.32);
+    });
+  }catch(e){}
+}
+var bannerTimer=null;
+function mostrarBanner(t,c){
+  document.getElementById('bannerT').textContent=t;
+  document.getElementById('bannerC').textContent=c;
+  document.getElementById('banner').classList.add('ver');
+  clearTimeout(bannerTimer);
+  bannerTimer=setTimeout(ocultarBanner,25000);
+}
+function ocultarBanner(){document.getElementById('banner').classList.remove('ver');}
+document.getElementById('bannerX').addEventListener('click',ocultarBanner);
+
+async function notificar(titulo,cuerpo,etiqueta){
+  sonar();
+  mostrarBanner(titulo,cuerpo);
+  if(!('Notification' in window)||Notification.permission!=='granted')return;
+  try{
+    if('serviceWorker' in navigator&&navigator.serviceWorker.controller){
+      var reg=await navigator.serviceWorker.ready;
+      await reg.showNotification(titulo,{body:cuerpo,tag:etiqueta,icon:'icon-192.png',badge:'icon-192.png',renotify:false});
+      return;
+    }
+  }catch(e){}
+  try{new Notification(titulo,{body:cuerpo,tag:etiqueta,icon:'icon-192.png'});}catch(e){}
+}
+
+/* ================= Avisos con ventana de tolerancia ================= */
+function objetivosDeAviso(){
+  var k=hoyISO(), d=dia(k), lista=[];
+  if(D.config.medsOn){
+    [['AM','de la mañana'],['PM','de la noche']].forEach(function(p){
+      var cual=p[0], cfg=D.config['med'+cual], min=aMin(cfg.hora);
+      if(min===null||d['med'+cual])return;
+      var nom=cfg.nombre?cfg.nombre+' — ':'';
+      lista.push({clave:'med'+cual,min:min,titulo:'💊 Medicamento '+p[1],cuerpo:nom+'Es la hora. Márcalo en la app al tomarlo.'});
+      if(min+VENTANA<1440)
+        lista.push({clave:'med'+cual+'-r',min:min+VENTANA,titulo:'💊 Sigue pendiente',cuerpo:'El medicamento '+p[1]+' aún no está marcado.'});
+    });
+  }
+  itemsDeFecha(k).forEach(function(it){
+    var min=aMin(it.hora);
+    if(min===null||estaHecho(k,it.id))return;
+    lista.push({clave:'act-'+it.id,min:min,titulo:'Ahora · '+it.hora,cuerpo:it.texto});
+  });
+  return lista;
+}
+function chequearAvisos(){
+  var k=hoyISO(), d=dia(k), ahora=aMin(hhmmAhora()), cambio=false;
+  objetivosDeAviso().forEach(function(o){
+    if(d.avisos[o.clave])return;
+    var delta=ahora-o.min;
+    if(delta>=0&&delta<=VENTANA){
+      d.avisos[o.clave]=1;cambio=true;
+      notificar(o.titulo,o.cuerpo,M.ns+'-'+o.clave);
+    }
+  });
+  if(cambio)persistir();
+}
+
+/* ================= Cinta del día ================= */
+function renderCinta(){
+  var cont=document.getElementById('cinta'), k=hoyISO();
+  var INI=6*60, FIN=24*60, ancho=FIN-INI;
+  var puntos=[];
+  if(D.config.medsOn){
+    ['AM','PM'].forEach(function(c){
+      var m=aMin(D.config['med'+c].hora);
+      if(m!==null)puntos.push({min:m,cls:'med',ok:dia(k)['med'+c]});
+    });
+  }
+  itemsDeFecha(k).forEach(function(it){
+    var m=aMin(it.hora);
+    if(m!==null)puntos.push({min:m,cls:it.tipo,ok:estaHecho(k,it.id)});
+  });
+  var html='<div class="cinta-base"></div>';
+  [6,9,12,15,18,21,24].forEach(function(h){
+    var pos=(h*60-INI)/ancho*100;
+    if(pos<0||pos>100)return;
+    html+='<div class="cinta-tick" style="left:'+pos+'%"></div>';
+    html+='<div class="cinta-h" style="left:'+Math.min(97,Math.max(3,pos))+'%">'+String(h).padStart(2,'0')+'</div>';
+  });
+  puntos.forEach(function(p){
+    var pos=(Math.min(FIN,Math.max(INI,p.min))-INI)/ancho*100;
+    html+='<div class="cinta-pto '+p.cls+(p.ok?' ok':'')+'" style="left:'+pos+'%"></div>';
+  });
+  var ah=aMin(hhmmAhora());
+  if(ah>=INI&&ah<=FIN)html+='<div class="cinta-ahora" style="left:'+((ah-INI)/ancho*100)+'%"></div>';
+  if(!puntos.length)html+='<div class="cinta-vacia">Tu día, de 6 de la mañana a medianoche</div>';
+  cont.innerHTML=html;
+}
+
+/* ================= Cabecera ================= */
+function renderFecha(){
+  var d=new Date();
+  var dn=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+  var mn=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  document.getElementById('fechaEyebrow').textContent=dn[d.getDay()]+' '+d.getDate()+' de '+mn[d.getMonth()];
+  var h=d.getHours();
+  var s=h<12?'Buenos días':h<20?'Buenas tardes':'Buenas noches';
+  document.getElementById('saludo').innerHTML=s+', <span class="marca">'+M.nombre+'</span>';
+}
+
+/* ================= Medicamentos ================= */
+function renderMeds(){
+  var on=D.config.medsOn;
+  document.getElementById('tarjetaMeds').style.display=on?'':'none';
+  document.getElementById('cajaRacha').style.display=on?'':'none';
+  if(!on)return;
+  var d=dia(hoyISO());
+  ['AM','PM'].forEach(function(c){
+    var tomado=d['med'+c], el=document.getElementById('med'+c), cfg=D.config['med'+c];
+    el.classList.toggle('tomado',tomado);
+    el.setAttribute('aria-checked',String(tomado));
+    document.getElementById('med'+c+'Hora').textContent=cfg.hora;
+    document.getElementById('med'+c+'Estado').textContent=
+      tomado?'Tomado ✓':(cfg.nombre?cfg.nombre:'Pendiente — toca para marcar');
+  });
+}
+['AM','PM'].forEach(function(c){
+  var el=document.getElementById('med'+c);
+  function alternar(){
+    var d=dia(hoyISO());
+    d['med'+c]=!d['med'+c];
+    if(d['med'+c]){delete d.avisos['med'+c];delete d.avisos['med'+c+'-r'];}
+    persistir();renderMeds();renderCinta();renderHistorial();
+  }
+  el.addEventListener('click',alternar);
+  el.addEventListener('keydown',function(e){if(e.key===' '||e.key==='Enter'){e.preventDefault();alternar();}});
+});
+
+/* ================= Timeline de hoy ================= */
+function renderHoy(){
+  var k=hoyISO(), d=dia(k), cont=document.getElementById('timelineHoy');
+  var lista=itemsDeFecha(k), hm=hhmmAhora();
+  cont.innerHTML='';
+  if(!lista.length){
+    cont.innerHTML='<div class="vacio">Hoy no tienes nada planificado.<br>Arma tu semana en <strong>Planificar</strong>.</div>';
+    document.getElementById('progresoNum').textContent='Sin actividades hoy';
+    document.getElementById('progresoBarra').style.width='0%';
+    return;
+  }
+  var hechos=0;
+  lista.forEach(function(it){
+    var hecho=estaHecho(k,it.id);
+    if(hecho)hechos++;
+    var fila=document.createElement('div');
+    fila.className='tl-item'+(hecho?' hecho':'');
+
+    var hora=document.createElement('span');
+    hora.className='tl-hora'+(it.hora&&it.hora<hm?' pasada':'');
+    hora.textContent=it.hora||'—';
+
+    var chk=document.createElement('button');
+    chk.className='tl-check';
+    chk.setAttribute('aria-pressed',String(hecho));
+    chk.setAttribute('aria-label',(hecho?'Desmarcar ':'Marcar como hecho: ')+it.texto);
+    chk.addEventListener('click',function(){
+      if(estaHecho(k,it.id))delete d.hechos[it.id];
+      else d.hechos[it.id]=true;
+      persistir();renderHoy();renderCinta();renderHistorial();renderEventos();
+    });
+
+    var cuerpo=document.createElement('div');
+    cuerpo.className='tl-cuerpo';
+    var txt=document.createElement('span');txt.className='tl-texto';txt.textContent=it.texto;
+    var tipo=document.createElement('span');tipo.className='tl-tipo '+it.tipo;tipo.textContent=it.tipo;
+    cuerpo.appendChild(txt);cuerpo.appendChild(tipo);
+
+    fila.appendChild(hora);fila.appendChild(chk);fila.appendChild(cuerpo);
+
+    if(it.tipo==='rutina'){
+      var om=document.createElement('button');
+      om.className='tl-omitir';om.textContent='hoy no';
+      om.setAttribute('aria-label','Omitir solo hoy: '+it.texto);
+      om.addEventListener('click',function(){
+        it.ref.omitir=it.ref.omitir||[];
+        if(it.ref.omitir.indexOf(k)<0)it.ref.omitir.push(k);
+        delete d.hechos[it.id];
+        sincronizarPlanHoy();persistir();renderTodo();
+      });
+      fila.appendChild(om);
+    }
+    cont.appendChild(fila);
+  });
+  var pct=Math.round(hechos/lista.length*100);
+  document.getElementById('progresoBarra').style.width=pct+'%';
+  document.getElementById('progresoNum').textContent=hechos+' de '+lista.length+' · '+pct+'%';
+  sincronizarPlanHoy();
+}
+
+/* ================= Planificador ================= */
+var diaPlanSel=new Date().getDay();
+function renderRutina(){
+  document.querySelectorAll('#diasTabs button').forEach(function(b){
+    b.classList.toggle('sel',Number(b.dataset.d)===diaPlanSel);
+    b.classList.toggle('hoy-tab',Number(b.dataset.d)===new Date().getDay());
+  });
+  var cont=document.getElementById('listaRutina');
+  var lista=D.rutina.filter(function(r){return r.dia===diaPlanSel;})
+    .sort(function(a,b){return a.hora<b.hora?-1:1;});
+  cont.innerHTML='';
+  if(!lista.length){cont.innerHTML='<div class="vacio">Este día está libre. Agrega la primera actividad abajo.</div>';return;}
+  lista.forEach(function(r){
+    var fila=document.createElement('div');fila.className='fila';
+    var h=document.createElement('span');h.className='fila-hora';h.textContent=r.hora;
+    var t=document.createElement('span');t.className='fila-texto';t.textContent=r.texto;
+    if((r.omitir||[]).length){
+      var m=document.createElement('span');m.className='fila-marca';
+      m.textContent=r.omitir.length+' omitido'+(r.omitir.length>1?'s':'');
+      t.appendChild(document.createTextNode(' '));t.appendChild(m);
+    }
+    var x=document.createElement('button');x.className='icon-btn';x.textContent='×';
+    x.setAttribute('aria-label','Eliminar '+r.texto);
+    x.addEventListener('click',function(){
+      D.rutina=D.rutina.filter(function(y){return y.id!==r.id;});
+      sincronizarPlanHoy();persistir();renderTodo();
+    });
+    fila.appendChild(h);fila.appendChild(t);fila.appendChild(x);
+    cont.appendChild(fila);
+  });
+}
+document.getElementById('diasTabs').addEventListener('click',function(e){
+  var b=e.target.closest('button');if(!b)return;
+  diaPlanSel=Number(b.dataset.d);renderRutina();
+});
+function agregarRutina(){
+  var hora=document.getElementById('rHora').value;
+  var texto=document.getElementById('rTexto').value.trim();
+  if(!hora||!texto)return;
+  D.rutina.push({id:idNuevo(),dia:diaPlanSel,hora:hora,texto:texto,omitir:[]});
+  document.getElementById('rTexto').value='';
+  sincronizarPlanHoy();persistir();renderTodo();
+}
+document.getElementById('btnAgregarRutina').addEventListener('click',agregarRutina);
+document.getElementById('rTexto').addEventListener('keydown',function(e){if(e.key==='Enter')agregarRutina();});
+
+document.getElementById('btnCopiarDia').addEventListener('click',function(){
+  var dest=Number(document.getElementById('selCopiar').value);
+  if(dest===diaPlanSel)return;
+  D.rutina.filter(function(r){return r.dia===diaPlanSel;}).forEach(function(r){
+    D.rutina.push({id:idNuevo(),dia:dest,hora:r.hora,texto:r.texto,omitir:[]});
+  });
+  sincronizarPlanHoy();persistir();renderTodo();
+  var ok=document.getElementById('okCopiar');
+  ok.classList.add('ver');setTimeout(function(){ok.classList.remove('ver');},1800);
+});
+
+function renderEventos(){
+  var hoy=hoyISO();
+  var prox=D.eventos.filter(function(e){return e.fecha>=hoy&&!estaHecho(e.fecha,'e'+e.id);})
+    .sort(function(a,b){return (a.fecha+(a.hora||'zz'))<(b.fecha+(b.hora||'zz'))?-1:1;});
+  var venc=D.eventos.filter(function(e){return e.fecha<hoy&&!estaHecho(e.fecha,'e'+e.id);})
+    .sort(function(a,b){return a.fecha>b.fecha?-1:1;});
+  pintarEventos(document.getElementById('listaEventos'),prox,'Sin eventos próximos.');
+  document.getElementById('tarjetaVencidos').style.display=venc.length?'':'none';
+  if(venc.length)pintarEventos(document.getElementById('listaVencidos'),venc,'');
+  renderOmitidos();
+}
+function fmtFecha(iso){
+  if(iso===hoyISO())return 'hoy';
+  var man=new Date();man.setDate(man.getDate()+1);
+  if(iso===fechaISO(man))return 'mañana';
+  var dn=['dom','lun','mar','mié','jue','vie','sáb'], p=iso.split('-');
+  return dn[desdeISO(iso).getDay()]+' '+p[2]+'/'+p[1];
+}
+function pintarEventos(cont,lista,vacio){
+  cont.innerHTML='';
+  if(!lista.length){cont.innerHTML='<div class="vacio">'+vacio+'</div>';return;}
+  lista.forEach(function(ev){
+    var fila=document.createElement('div');fila.className='fila';
+    var h=document.createElement('span');h.className='fila-hora violeta';
+    h.textContent=fmtFecha(ev.fecha)+(ev.hora?' '+ev.hora:'');
+    var t=document.createElement('span');t.className='fila-texto';t.textContent=ev.texto;
+    var ok=document.createElement('button');ok.className='icon-btn';ok.textContent='✓';
+    ok.setAttribute('aria-label','Marcar como hecho: '+ev.texto);
+    ok.addEventListener('click',function(){
+      dia(ev.fecha).hechos['e'+ev.id]=true;persistir();renderTodo();
+    });
+    var x=document.createElement('button');x.className='icon-btn';x.textContent='×';
+    x.setAttribute('aria-label','Eliminar '+ev.texto);
+    x.addEventListener('click',function(){
+      D.eventos=D.eventos.filter(function(y){return y.id!==ev.id;});
+      sincronizarPlanHoy();persistir();renderTodo();
+    });
+    fila.appendChild(h);fila.appendChild(t);fila.appendChild(ok);fila.appendChild(x);
+    cont.appendChild(fila);
+  });
+}
+function agregarEvento(){
+  var f=document.getElementById('eFecha').value;
+  var texto=document.getElementById('eTexto').value.trim();
+  if(!f||!texto)return;
+  D.eventos.push({id:idNuevo(),fecha:f,hora:document.getElementById('eHora').value||'',texto:texto});
+  document.getElementById('eTexto').value='';
+  sincronizarPlanHoy();persistir();renderTodo();
+}
+document.getElementById('btnAgregarEvento').addEventListener('click',agregarEvento);
+document.getElementById('eTexto').addEventListener('keydown',function(e){if(e.key==='Enter')agregarEvento();});
+
+function renderOmitidos(){
+  var hoy=hoyISO(), filas=[];
+  D.rutina.forEach(function(r){
+    (r.omitir||[]).filter(function(f){return f>=hoy;}).forEach(function(f){filas.push({r:r,f:f});});
+  });
+  var caja=document.getElementById('tarjetaOmitidos');
+  caja.style.display=filas.length?'':'none';
+  if(!filas.length)return;
+  var cont=document.getElementById('listaOmitidos');cont.innerHTML='';
+  filas.sort(function(a,b){return a.f<b.f?-1:1;}).forEach(function(o){
+    var fila=document.createElement('div');fila.className='fila';
+    var h=document.createElement('span');h.className='fila-hora violeta';h.textContent=fmtFecha(o.f);
+    var t=document.createElement('span');t.className='fila-texto';t.textContent=o.r.texto;
+    var b=document.createElement('button');b.className='btn fantasma chico';b.textContent='Restaurar';
+    b.addEventListener('click',function(){
+      o.r.omitir=o.r.omitir.filter(function(x){return x!==o.f;});
+      sincronizarPlanHoy();persistir();renderTodo();
+    });
+    fila.appendChild(h);fila.appendChild(t);fila.appendChild(b);
+    cont.appendChild(fila);
+  });
+}
+
+/* ================= Historial ================= */
+function renderHistorial(){
+  var cont=document.getElementById('listaHistorial'), hoy=new Date();
+  var filas=[], suma=0, n=0;
+  for(var i=0;i<14;i++){
+    var f=new Date(hoy);f.setDate(hoy.getDate()-i);
+    var k=fechaISO(f), reg=D.dias[k];
+    var plan = reg&&Array.isArray(reg.plan) ? reg.plan : (i===0?itemsDeFecha(k):null);
+    var pct=null;
+    if(plan&&plan.length){
+      var h=plan.filter(function(p){return reg&&reg.hechos&&reg.hechos[p.id];}).length;
+      pct=Math.round(h/plan.length*100);
+      if(i<7){suma+=pct;n++;}
+    }else if(plan&&plan.length===0){pct=-1;}
+    filas.push({k:k,reg:reg,pct:pct,esHoy:i===0});
+  }
+  cont.innerHTML='';
+  filas.forEach(function(f){
+    var fila=document.createElement('div');fila.className='hist-dia';
+    var p=f.k.split('-');
+    var medTxt=D.config.medsOn?((f.reg&&f.reg.medAM?'💊':'·')+(f.reg&&f.reg.medPM?'💊':'·')):'';
+    var val=f.pct===null?'—':f.pct===-1?'libre':f.pct+'%';
+    var w=(f.pct===null||f.pct===-1)?0:f.pct;
+    fila.innerHTML='<span class="hist-fecha">'+p[2]+'/'+p[1]+(f.esHoy?' · hoy':'')+'</span>'+
+      '<span class="hist-meds">'+medTxt+'</span>'+
+      '<div class="hist-barra"><div style="width:'+w+'%"></div></div>'+
+      '<span class="hist-pct">'+val+'</span>';
+    cont.appendChild(fila);
+  });
+  document.getElementById('promActividades').textContent=n?Math.round(suma/n)+'%':'—';
+
+  var racha=0;
+  for(var j=0;j<400;j++){
+    var g=new Date(hoy);g.setDate(hoy.getDate()-j);
+    var dd=D.dias[fechaISO(g)];
+    if(dd&&dd.medAM&&dd.medPM){racha++;}
+    else if(j===0){continue;}
+    else break;
+  }
+  document.getElementById('rachaMeds').textContent=racha;
+}
+
+/* ================= Exportación al calendario (.ics) ================= */
+function plegar(l){
+  var out=[],s=l;
+  while(s.length>73){out.push(s.slice(0,73));s=' '+s.slice(73);}
+  out.push(s);return out.join('\r\n');
+}
+function esc(s){return String(s).replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\n/g,'\\n');}
+function selloUTC(){return new Date().toISOString().replace(/[-:]/g,'').split('.')[0]+'Z';}
+function fechaHora(iso,hhmm){return iso.replace(/-/g,'')+'T'+(hhmm||'09:00').replace(':','')+'00';}
+function proximoDiaSemana(ds){
+  var d=new Date(), delta=(ds-d.getDay()+7)%7;
+  d.setDate(d.getDate()+delta);return fechaISO(d);
+}
+function generarICS(){
+  var L=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//'+M.nombre+'//Agenda//ES','CALSCALE:GREGORIAN','METHOD:PUBLISH'];
+  var stamp=selloUTC(), BYDAY=['SU','MO','TU','WE','TH','FR','SA'];
+  function alarma(trig,txt){return ['BEGIN:VALARM','ACTION:DISPLAY','TRIGGER:'+trig,'DESCRIPTION:'+esc(txt),'END:VALARM'];}
+
+  if(D.config.medsOn){
+    [['AM','Medicamento de la mañana'],['PM','Medicamento de la noche']].forEach(function(p){
+      var cfg=D.config['med'+p[0]];
+      if(!cfg.hora)return;
+      var titulo=cfg.nombre?p[1]+' — '+cfg.nombre:p[1];
+      L=L.concat(['BEGIN:VEVENT','UID:med'+p[0]+'-'+M.ns+'@agenda','DTSTAMP:'+stamp,
+        'DTSTART:'+fechaHora(hoyISO(),cfg.hora),'DURATION:PT10M',
+        plegar('SUMMARY:💊 '+esc(titulo)),'RRULE:FREQ=DAILY'],
+        alarma('PT0M',titulo),['END:VEVENT']);
+    });
+  }
+  D.rutina.forEach(function(r){
+    var ini=proximoDiaSemana(r.dia);
+    var ev=['BEGIN:VEVENT','UID:r'+r.id+'-'+M.ns+'@agenda','DTSTAMP:'+stamp,
+      'DTSTART:'+fechaHora(ini,r.hora),'DURATION:PT1H',
+      plegar('SUMMARY:'+esc(r.texto)),
+      'RRULE:FREQ=WEEKLY;BYDAY='+BYDAY[r.dia]];
+    var fut=(r.omitir||[]).filter(function(f){return f>=ini;});
+    if(fut.length)ev.push(plegar('EXDATE:'+fut.map(function(f){return fechaHora(f,r.hora);}).join(',')));
+    L=L.concat(ev,alarma('-PT10M',r.texto),['END:VEVENT']);
+  });
+  D.eventos.forEach(function(e){
+    var ev=['BEGIN:VEVENT','UID:e'+e.id+'-'+M.ns+'@agenda','DTSTAMP:'+stamp,
+      plegar('SUMMARY:'+esc(e.texto))];
+    if(e.hora)ev=ev.concat(['DTSTART:'+fechaHora(e.fecha,e.hora),'DURATION:PT1H']);
+    else ev=ev.concat(['DTSTART;VALUE=DATE:'+e.fecha.replace(/-/g,''),'DURATION:P1D']);
+    L=L.concat(ev,alarma('-PT30M',e.texto),['END:VEVENT']);
+  });
+  L.push('END:VCALENDAR');
+  return L.join('\r\n');
+}
+function descargar(nombre,texto,tipo){
+  try{
+    var b=new Blob([texto],{type:tipo}), u=URL.createObjectURL(b);
+    var a=document.createElement('a');a.href=u;a.download=nombre;
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    setTimeout(function(){URL.revokeObjectURL(u);},2000);
+    return true;
+  }catch(e){return false;}
+}
+document.getElementById('btnICS').addEventListener('click',function(){
+  if(!D.rutina.length&&!D.eventos.length&&!D.config.medsOn){
+    mostrarBanner('Nada que exportar','Agrega actividades o activa los medicamentos primero.');return;
+  }
+  var ok=descargar(M.ns+'-agenda.ics',generarICS(),'text/calendar;charset=utf-8');
+  mostrarBanner(ok?'Archivo listo':'No se pudo descargar',
+    ok?'Ábrelo y confirma para agregarlo al calendario del teléfono.':'Prueba desde el navegador del sistema.');
+});
+
+/* ================= Respaldo ================= */
+function renderRespaldo(){
+  var t=D.config.ultimoRespaldo;
+  document.getElementById('txtRespaldo').textContent=
+    t?'Último respaldo: '+t.slice(0,10):'Todavía no has descargado ningún respaldo.';
+  var viejo=!t||(Date.now()-new Date(t).getTime())>DIAS_RESPALDO*864e5;
+  document.getElementById('avisoRespaldo').style.display=(viejo&&(D.rutina.length||D.eventos.length))?'flex':'none';
+}
+function hacerRespaldo(){
+  var ok=descargar(M.ns+'-respaldo-'+hoyISO()+'.json',JSON.stringify(D,null,1),'application/json');
+  if(ok){D.config.ultimoRespaldo=new Date().toISOString();persistir();renderRespaldo();
+    mostrarBanner('Respaldo descargado','Guárdalo en un lugar seguro.');}
+}
+document.getElementById('btnDescargar').addEventListener('click',hacerRespaldo);
+document.getElementById('btnRespaldoAviso').addEventListener('click',hacerRespaldo);
+document.getElementById('btnRestaurar').addEventListener('click',function(){document.getElementById('fileRestaurar').click();});
+document.getElementById('fileRestaurar').addEventListener('change',function(ev){
+  var f=ev.target.files&&ev.target.files[0];if(!f)return;
+  var fr=new FileReader();
+  fr.onload=function(){
+    try{
+      var obj=JSON.parse(fr.result);
+      if(!obj||typeof obj!=='object')throw 0;
+      D=migrar(obj);sincronizarPlanHoy();persistir();cargarAjustes();renderTodo();
+      mostrarBanner('Datos restaurados','Se reemplazó el contenido con el del archivo.');
+    }catch(e){mostrarBanner('Archivo no válido','Ese archivo no es un respaldo de esta app.');}
+    ev.target.value='';
+  };
+  fr.readAsText(f);
+});
+
+/* ================= Ajustes ================= */
+function aplicarTema(){
+  var t=D.config.tema;
+  var real=t;
+  if(t==='auto')real=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'oscuro':'claro';
+  document.documentElement.setAttribute('data-tema',real);
+  document.querySelectorAll('#segTema button').forEach(function(b){b.classList.toggle('sel',b.dataset.t===t);});
+}
+document.getElementById('segTema').addEventListener('click',function(e){
+  var b=e.target.closest('button');if(!b)return;
+  D.config.tema=b.dataset.t;persistir();aplicarTema();
+});
+if(window.matchMedia){
+  try{window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',function(){if(D&&D.config.tema==='auto')aplicarTema();});}catch(e){}
+}
+document.getElementById('swMeds').addEventListener('click',function(){
+  D.config.medsOn=!D.config.medsOn;
+  this.setAttribute('aria-checked',String(D.config.medsOn));
+  document.getElementById('bloqueMeds').style.display=D.config.medsOn?'':'none';
+  persistir();renderTodo();
+});
+document.getElementById('btnGuardarCfg').addEventListener('click',function(){
+  D.config.medAM.hora=document.getElementById('cfgMedAMHora').value||'08:00';
+  D.config.medPM.hora=document.getElementById('cfgMedPMHora').value||'21:00';
+  D.config.medAM.nombre=document.getElementById('cfgMedAMNombre').value.trim();
+  D.config.medPM.nombre=document.getElementById('cfgMedPMNombre').value.trim();
+  persistir();renderTodo();
+  var ok=document.getElementById('cfgOk');
+  ok.classList.add('ver');setTimeout(function(){ok.classList.remove('ver');},1800);
+});
+function cargarAjustes(){
+  document.getElementById('cfgMedAMHora').value=D.config.medAM.hora;
+  document.getElementById('cfgMedPMHora').value=D.config.medPM.hora;
+  document.getElementById('cfgMedAMNombre').value=D.config.medAM.nombre||'';
+  document.getElementById('cfgMedPMNombre').value=D.config.medPM.nombre||'';
+  document.getElementById('swMeds').setAttribute('aria-checked',String(D.config.medsOn));
+  document.getElementById('bloqueMeds').style.display=D.config.medsOn?'':'none';
+  document.getElementById('verTxt').textContent=M.version;
+  aplicarTema();
+}
+function renderAvisosSistema(){
+  document.getElementById('avisoNotif').style.display=
+    ('Notification' in window&&Notification.permission==='default')?'flex':'none';
+  var caja=document.getElementById('avisoAlmac');
+  if(Store.modo()==='memoria'){
+    caja.style.display='flex';
+    document.getElementById('avisoAlmacTxt').textContent=
+      'Este navegador no permite guardar datos. Lo que anotes se perderá al cerrar. Descarga un respaldo antes de salir.';
+  }else caja.style.display='none';
+}
+document.getElementById('btnNotif').addEventListener('click',function(){
+  try{Notification.requestPermission().then(renderAvisosSistema);}catch(e){}
+});
+
+/* ================= Navegación ================= */
+document.querySelector('nav').addEventListener('click',function(e){
+  var b=e.target.closest('button');if(!b)return;
+  seccion=b.dataset.sec;
+  document.querySelectorAll('nav button').forEach(function(x){x.classList.toggle('activa',x===b);});
+  document.querySelectorAll('section').forEach(function(s){s.classList.remove('visible');});
+  document.getElementById('sec-'+seccion).classList.add('visible');
+  window.scrollTo(0,0);
+});
+
+/* ================= Render global y ciclo ================= */
+function renderTodo(){
+  renderFecha();renderMeds();renderHoy();renderCinta();
+  renderRutina();renderEventos();renderHistorial();renderRespaldo();renderAvisosSistema();
+  diaMostrado=hoyISO();
+}
+function latido(){
+  if(hoyISO()!==diaMostrado){sincronizarPlanHoy();persistir();renderTodo();}
+  else{renderCinta();renderFecha();}
+  chequearAvisos();
+}
+document.addEventListener('visibilitychange',function(){if(!document.hidden)latido();});
+window.addEventListener('focus',latido);
+
+async function iniciar(){
+  Store.init();
+  var guardado=await Store.leer('datos');
+  D=guardado?migrar(guardado):datosNuevos();
+  document.getElementById('eFecha').value=hoyISO();
+  document.getElementById('selCopiar').value=String((new Date().getDay()+1)%7);
+  sincronizarPlanHoy();
+  cargarAjustes();
+  renderTodo();
+  chequearAvisos();
+  await Store.escribir('datos',D);
+  setInterval(latido,30000);
+}
+iniciar();
+
+if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')){
+  window.addEventListener('load',function(){navigator.serviceWorker.register('./sw.js').catch(function(){});});
+}
+})();
+</script>
+</body>
+</html>
