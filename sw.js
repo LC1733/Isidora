@@ -1,4 +1,4 @@
-const CACHE = "isidora-agenda-v7";
+const CACHE = "isidora-agenda-v8";
 const APP = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg"];
 
 self.addEventListener("install", (event) => {

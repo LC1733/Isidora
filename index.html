@@ -255,6 +255,8 @@ input::placeholder{color:var(--gris);opacity:.75}
 @keyframes latir-mic{0%,100%{box-shadow:0 0 0 0 rgba(224,49,49,.45)}50%{box-shadow:0 0 0 12px rgba(224,49,49,0)}}
 .voz-estado{font-size:12.5px;color:var(--gris);margin-top:8px;min-height:1em}
 .voz-estado.error{color:var(--alerta)}
+.voz-diag{border:none;background:none;color:var(--gris);font-size:11px;text-decoration:underline;cursor:pointer;padding:4px 0;font-family:'Inter',sans-serif}
+.voz-log{font-family:'JetBrains Mono',monospace;font-size:10.5px;background:var(--tarjeta2);border:1px solid var(--linea);border-radius:10px;padding:8px;white-space:pre-wrap;color:var(--gris);max-height:180px;overflow:auto;margin-top:4px}
 .voz-preview{margin-top:12px;border:1.5px solid var(--acento);border-radius:18px;padding:14px;background:var(--acento-suave)}
 .vp-tit{font-weight:800;font-size:14px;margin-bottom:2px}
 .vp-res{font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--tinta);margin-bottom:10px}
@@ -378,6 +380,8 @@ input[type=time],input[type=date],input[type=text],select{border-radius:14px}
         <button class="mic" id="btnMic" aria-label="Dictar con el micrófono">🎙️</button>
       </div>
       <div class="voz-estado" id="vozEstado"></div>
+      <button class="voz-diag" id="btnVozDiag" type="button">Detalles técnicos del micrófono</button>
+      <pre class="voz-log" id="vozLog" style="display:none"></pre>
       <div class="btn-fila" id="vozAcciones">
         <button class="btn chico" id="btnInterpretar">Entender y anotar</button>
       </div>
@@ -808,6 +812,8 @@ function interpretar(texto,ahora){
   }
   tomarLugar(/\b(?:en\s+la\s+direccion|la\s+direccion\s+es|direccion|ubicad[oa]\s+en|que\s+queda\s+en|queda\s+en)\s*(?:de\s+|:\s*)?/,false);
   if(!lugar)tomarLugar(/\ben\s+(?:el\s+|la\s+|los\s+|las\s+)?(?=(?:calle|avenida|av\.?|avda|pasaje|camino|clinica|hospital|consultorio|cesfam|cecosf|centro|edificio|torre|colegio|liceo|jardin|universidad|instituto|oficina|mall|notaria|banco|laboratorio|farmacia|integramedica|megasalud|redsalud|vidaintegra|parque|plaza|iglesia|gimnasio|municipalidad|registro\s+civil|metro|estacion)\b)/,false);
+  // Dirección sin palabra clave: "en Los Leones 1234", "en Providencia 2133"
+  if(!lugar)tomarLugar(/\ben\s+(?=(?:(?!a\s+las?\b|el\s+dia\b)[a-z.]+\s+){1,4}\d{2,5}\b)/,false);
   var extras=[];
   (function(){
     var g=/\b(consulta|box|piso|oficina|depto|departamento|sala|torre)\s*(?:n(?:umero|ro|o|°|º)?\.?\s*|#\s*)?([a-z]?\d{1,5}[a-z]?)\b/g,m;
@@ -864,7 +870,7 @@ return {interpretar:interpretar,describir:describir};
 })();
 </script>
 <script>
-window.__MARCA__={"id":"isidora","nombre":"Isidora","ns":"isidora","temaDefecto":"claro","medsDefecto":true,"version":"4.3"};
+window.__MARCA__={"id":"isidora","nombre":"Isidora","ns":"isidora","temaDefecto":"claro","medsDefecto":true,"version":"4.4"};
 </script>
 <script>
 (function(){
@@ -1914,7 +1920,8 @@ function empezarDictado(){
     return;
   }
   if(escuchando){terminarDictado(true);return;}
-  sesionVoz={activa:true,porUsuario:false,inicio:Date.now(),ultimaVoz:Date.now(),hubo:false,fallosRapidos:0,error:null};
+  sesionVoz={activa:true,porUsuario:false,inicio:Date.now(),ultimaVoz:Date.now(),hubo:false,fallosRapidos:0,error:null,tramos:0};
+  logVoz('inicio · '+(ES_IOS?'iPhone/iPad':'otro')+' · '+vozIdioma);
   escuchando=true;micUI();vibrar([40]);
   clearInterval(relojVoz);relojVoz=setInterval(tickVoz,500);
   tickVoz();
@@ -1925,6 +1932,25 @@ function empezarDictado(){
    pasen 3 minutos, o haya silencio largo después de haber hablado. */
 var VOZ_MAX=180000,VOZ_SILENCIO=12000,VOZ_SIN_HABLA=20000;
 var sesionVoz=null,relojVoz=null;
+// En Safari de iPhone el modo continuo falla: se usa el modo por frases y se reanuda en cada pausa.
+var ES_IOS=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+var registroVoz=[];
+function logVoz(t){
+  var d=new Date();registroVoz.push(String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0')+' '+t);
+  if(registroVoz.length>25)registroVoz.shift();
+  var el=$('vozLog');if(el&&el.style.display!=='none')el.textContent=registroVoz.join('\n');
+}
+function pausarDictado(){
+  // El teléfono no dejó reanudar sin un toque: se conserva el texto y se pide tocar el micrófono.
+  if(!sesionVoz)return;
+  logVoz('pausa: el teléfono no permitió reanudar solo');
+  sesionVoz.activa=false;sesionVoz=null;rec=null;
+  clearInterval(relojVoz);relojVoz=null;
+  escuchando=false;micUI();
+  var hay=!!$('vozTexto').value.trim();
+  vozEstado(hay?'⏸ El teléfono pausó el micrófono. Toca 🎙️ para seguir hablando (se suma a lo anterior) o «Entender y anotar» si ya terminaste.'
+    :'⏸ El micrófono se pausó sin escucharte. Toca 🎙️ y habla apenas se ponga rojo.');
+}
 function tickVoz(){
   if(!sesionVoz||!sesionVoz.activa)return;
   var t=Date.now(),seg=Math.floor((t-sesionVoz.inicio)/1000);
@@ -1951,10 +1977,11 @@ function arrancarRec(){
   var r;
   try{r=new SR();}catch(e){sesionVoz.error='start';terminarDictado(false);return;}
   rec=r;
-  r.lang=vozIdioma;r.interimResults=true;r.continuous=true;r.maxAlternatives=1;
-  var base=$('vozTexto').value.trim(),nacio=Date.now();
+  r.lang=vozIdioma;r.interimResults=true;r.continuous=!ES_IOS;r.maxAlternatives=1;
+  var base=$('vozTexto').value.trim(),nacio=Date.now(),tramo=++sesionVoz.tramos;
+  r.onstart=function(){logVoz('tramo '+tramo+': micrófono abierto');};
   r.onresult=function(e){
-    if(rec!==r)return;
+    if(rec!==r||!sesionVoz)return;
     var finales=[],tmp='';
     for(var i=0;i<e.results.length;i++){var t=e.results[i][0].transcript;if(e.results[i].isFinal)finales.push(t);else tmp+=' '+t;}
     var todo=(unirFinales(finales)+' '+tmp).replace(/\s+/g,' ').trim();
@@ -1962,22 +1989,31 @@ function arrancarRec(){
     $('vozTexto').value=(base?base+' ':'')+todo;
   };
   r.onerror=function(e){
-    if(rec!==r)return;
-    if(e.error==='no-speech'||e.error==='aborted')return; // se reinicia en onend
+    logVoz('tramo '+tramo+': error '+e.error);
+    if(rec!==r||!sesionVoz)return;
+    if(e.error==='no-speech'||e.error==='aborted')return; // se reanuda en onend
     if(e.error==='language-not-supported'&&vozIdioma!=='es-ES'){vozIdioma='es-ES';return;}
+    // Un bloqueo al reanudar (no en el primer tramo) no es un error real: se pausa conservando el texto.
+    if(tramo>1&&/not-allowed|service-not-allowed|audio-capture/.test(e.error)){sesionVoz.pausar=true;return;}
     sesionVoz.error=e.error;sesionVoz.activa=false;
   };
   r.onend=function(){
+    logVoz('tramo '+tramo+': fin ('+Math.round((Date.now()-nacio)/100)/10+' s)');
     if(rec!==r)return;
+    if(sesionVoz&&sesionVoz.pausar){pausarDictado();return;}
     if(sesionVoz&&sesionVoz.activa){
       sesionVoz.fallosRapidos=(Date.now()-nacio<1200)?sesionVoz.fallosRapidos+1:0;
-      if(sesionVoz.fallosRapidos>=4){sesionVoz.error=sesionVoz.error||'start';terminarDictado(false);return;}
-      setTimeout(arrancarRec,120);
+      if(sesionVoz.fallosRapidos>=3){if(sesionVoz.hubo)pausarDictado();else{sesionVoz.error='start';terminarDictado(false);}return;}
+      setTimeout(arrancarRec,ES_IOS?350:150);
       return;
     }
     cerrarSesionVoz();
   };
-  try{r.start();}catch(e){sesionVoz.error='start';terminarDictado(false);}
+  try{r.start();}
+  catch(e){
+    logVoz('tramo '+tramo+': no pudo iniciar ('+(e&&e.name||e)+')');
+    if(tramo>1)pausarDictado();else{sesionVoz.error='start';terminarDictado(false);}
+  }
 }
 function terminarDictado(porUsuario){
   if(!sesionVoz)return;
@@ -1990,6 +2026,7 @@ function terminarDictado(porUsuario){
 function cerrarSesionVoz(){
   if(!sesionVoz)return;
   var s=sesionVoz;sesionVoz=null;rec=null;
+  logVoz('cierre'+(s.error?' con error '+s.error:'')+(s.hubo?' · con texto':' · sin texto'));
   clearInterval(relojVoz);relojVoz=null;
   escuchando=false;micUI();
   var hayTexto=!!$('vozTexto').value.trim();
@@ -2066,6 +2103,13 @@ function guardarVoz(alCalendario){
   if(D.config.sonido.on)Sonido.tocar('marimba',D.config.sonido.volumen*0.6);
 }
 $('btnMic').addEventListener('click',empezarDictado);
+$('btnVozDiag').addEventListener('click',function(){
+  var el=$('vozLog'),ver=el.style.display==='none';
+  el.style.display=ver?'':'none';
+  if(ver)el.textContent=['Versión '+M.version,'Navegador: '+navigator.userAgent,
+    'Dictado integrado: '+(SR?'sí':'no')+(window.navigator.standalone?' · app instalada':' · navegador'),
+    'Micrófono permitido por el sitio: '+(location.protocol==='https:'?'https':'no-https')].concat(registroVoz.length?['—']:[],registroVoz).join('\n');
+});
 $('btnInterpretar').addEventListener('click',interpretarVoz);
 $('vozTexto').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();interpretarVoz();}});
 $('vpDias').addEventListener('click',function(e){
