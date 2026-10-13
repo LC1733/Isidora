@@ -243,6 +243,32 @@ input::placeholder{color:var(--gris);opacity:.75}
 .toast.ver{opacity:1;transform:translate(-50%,0);pointer-events:auto}
 .toast button{border:none;background:none;color:inherit;font-weight:800;cursor:pointer;text-decoration:underline;font-size:13.5px;flex:none}
 
+/* ---------- Dictado por voz ---------- */
+.voz-caja{display:flex;gap:10px;align-items:stretch}
+.voz-caja textarea{flex:1;min-width:0;font-family:'Inter',sans-serif;font-size:15px;line-height:1.4;border:1.5px solid var(--linea);
+  border-radius:18px;padding:12px 14px;background:var(--tarjeta2);color:var(--texto);resize:vertical;min-height:88px}
+.voz-caja textarea:focus{outline:2px solid var(--acento);outline-offset:1px;border-color:var(--acento)}
+.mic{flex:none;width:64px;border:none;border-radius:20px;background:var(--degradado);color:#fff;font-size:26px;cursor:pointer;
+  position:relative;box-shadow:0 8px 20px rgba(226,69,127,.3);transition:transform .1s}
+.mic:active{transform:scale(.95)}
+.mic.escuchando{background:#E03131;animation:latir-mic 1.2s ease-in-out infinite}
+@keyframes latir-mic{0%,100%{box-shadow:0 0 0 0 rgba(224,49,49,.45)}50%{box-shadow:0 0 0 12px rgba(224,49,49,0)}}
+.voz-estado{font-size:12.5px;color:var(--gris);margin-top:8px;min-height:1em}
+.voz-estado.error{color:var(--alerta)}
+.voz-preview{margin-top:12px;border:1.5px solid var(--acento);border-radius:18px;padding:14px;background:var(--acento-suave)}
+.vp-tit{font-weight:800;font-size:14px;margin-bottom:2px}
+.vp-res{font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--tinta);margin-bottom:10px}
+.vp-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.vp-grid label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:700;color:var(--gris)}
+.vp-grid label.ancho,.vp-grid .ancho{grid-column:1/-1}
+.vp-grid .campo{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:var(--gris)}
+.vp-grid input,.vp-grid select{width:100%;min-width:0;background:var(--tarjeta)}
+.vp-check{display:flex;align-items:center;gap:8px;font-size:13px;margin-top:10px;cursor:pointer}
+.vp-check input{width:18px;height:18px;accent-color:var(--acento)}
+.vp-notas{margin-top:8px;font-size:12.5px;color:var(--alerta);line-height:1.45}
+.vp-notas div::before{content:'⚠ '}
+.fila-lugar,.tl-lugar{display:block;font-size:12px;color:var(--gris);margin-top:1px}
+
 /* ---------- Estilo Isidora: rosa, suave y redondeado ---------- */
 body{background:
   radial-gradient(900px 420px at 15% -120px,var(--brillo),transparent 70%),
@@ -344,6 +370,49 @@ input[type=time],input[type=date],input[type=text],select{border-radius:14px}
 
   <!-- ============ HOY ============ -->
   <section id="sec-hoy" class="visible">
+    <div class="tarjeta" id="tarjetaVoz">
+      <h2>Dime qué anotar <span class="pill">por voz</span></h2>
+      <div class="voz-caja">
+        <textarea id="vozTexto" rows="2" maxlength="300" aria-label="Qué quieres anotar"
+          placeholder="Toca el micrófono y di, por ejemplo: «Tengo hora al otorrino el martes a las 16 en Los Leones 1234, consulta 305»"></textarea>
+        <button class="mic" id="btnMic" aria-label="Dictar con el micrófono">🎙️</button>
+      </div>
+      <div class="voz-estado" id="vozEstado"></div>
+      <div class="btn-fila" id="vozAcciones">
+        <button class="btn chico" id="btnInterpretar">Entender y anotar</button>
+      </div>
+      <div class="voz-preview" id="vozPreview" style="display:none">
+        <div class="vp-tit">Esto entendí — revisa y guarda</div>
+        <div class="vp-res" id="vpResumen"></div>
+        <div class="vp-grid">
+          <label class="ancho">Qué<input type="text" id="vpTexto" maxlength="100"></label>
+          <label id="vpFechaL">Fecha<input type="date" id="vpFecha"></label>
+          <div class="ancho campo" id="vpDiasL" style="display:none">Se repite
+            <div class="dias-chips" id="vpDias">
+              <button data-d="1" aria-label="lunes">L</button><button data-d="2" aria-label="martes">M</button><button data-d="3" aria-label="miércoles">X</button>
+              <button data-d="4" aria-label="jueves">J</button><button data-d="5" aria-label="viernes">V</button><button data-d="6" aria-label="sábado">S</button><button data-d="0" aria-label="domingo">D</button>
+            </div>
+          </div>
+          <label>Hora<input type="time" id="vpHora"></label>
+          <label class="ancho" id="vpLugarL">Dónde<input type="text" id="vpLugar" maxlength="140" placeholder="Opcional"></label>
+          <label class="ancho" id="vpAntesL">Aviso previo
+            <select id="vpAntes">
+              <option value="">Como en Ajustes</option><option value="0">Solo a la hora</option><option value="15">15 min antes</option>
+              <option value="30">30 min antes</option><option value="60">1 hora antes</option><option value="120">2 horas antes</option><option value="180">3 horas antes</option>
+            </select>
+          </label>
+        </div>
+        <label class="vp-check" id="vpDiaAntesL"><input type="checkbox" id="vpDiaAntes" checked> Recordarme también el día anterior a las 20:00</label>
+        <div class="vp-notas" id="vpNotas"></div>
+        <div class="btn-fila">
+          <button class="btn" id="vpGuardar">Guardar con aviso</button>
+          <button class="btn fantasma" id="vpCal">Guardar + calendario del teléfono</button>
+          <button class="btn fantasma" id="vpCancelar">Descartar</button>
+        </div>
+      </div>
+      <div class="nota" id="vozNota">El dictado usa el reconocimiento de voz del propio teléfono. Lo que se anota queda guardado solo en este dispositivo.</div>
+    </div>
+
     <div class="tarjeta" id="tarjetaMeds">
       <h2>Medicamentos <span class="pill">lo primero</span></h2>
       <div class="med-grid">
@@ -405,6 +474,7 @@ input[type=time],input[type=date],input[type=text],select{border-radius:14px}
     <div class="tarjeta">
       <h2>Eventos puntuales <span class="pill">una sola vez</span></h2>
       <p class="nota" style="margin-top:0;margin-bottom:6px">Con fecha propia: hora al médico, cumpleaños, una entrega, un trámite. Toca un texto para editarlo.</p>
+      <button class="btn fantasma chico" id="btnIrDictar" style="margin-bottom:6px">🎙️ Dictar un evento</button>
       <div id="listaEventos"></div>
       <div class="form-linea">
         <input type="date" id="eFecha" aria-label="Fecha del evento">
@@ -598,7 +668,200 @@ input[type=time],input[type=date],input[type=text],select{border-radius:14px}
 </nav>
 
 <script>
-window.__MARCA__={"id":"isidora","nombre":"Isidora","ns":"isidora","temaDefecto":"claro","medsDefecto":true,"version":"4.1"};
+/* Intérprete local de frases en español → evento o rutina. No envía nada a ningún servidor. */
+window.IsidoraVoz=(function(){
+'use strict';
+var DIAS={domingo:0,lunes:1,martes:2,miercoles:3,jueves:4,viernes:5,sabado:6};
+var DRX='lunes|martes|miercoles|jueves|viernes|sabado|domingo';
+var MESES={enero:1,febrero:2,marzo:3,abril:4,mayo:5,junio:6,julio:7,agosto:8,septiembre:9,setiembre:9,octubre:10,noviembre:11,diciembre:12};
+var MRX=Object.keys(MESES).join('|');
+var NUM={'treinta y uno':31,'treinta y un':31,uno:1,un:1,una:1,primero:1,dos:2,tres:3,cuatro:4,cinco:5,seis:6,siete:7,ocho:8,nueve:9,
+  diez:10,once:11,doce:12,trece:13,catorce:14,quince:15,dieciseis:16,diecisiete:17,dieciocho:18,diecinueve:19,veinte:20,
+  veintiuno:21,veintiun:21,veintidos:22,veintitres:23,veinticuatro:24,veinticinco:25,veintiseis:26,veintisiete:27,
+  veintiocho:28,veintinueve:29,treinta:30,cuarenta:40,cincuenta:50};
+var NI='\\d{1,2}|'+Object.keys(NUM).sort(function(a,b){return b.length-a.length;}).join('|').replace(/ /g,'\\s+');
+var N='('+NI+')';
+function num(t){if(t==null)return null;t=String(t).replace(/\s+/g,' ');return /^\d+$/.test(t)?Number(t):(NUM[t]!=null?NUM[t]:null);}
+function norm(s){return s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();}
+function pad(x){return String(x).padStart(2,'0');}
+function iso(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+var NOM_DIA=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+
+function interpretar(texto,ahora){
+  ahora=ahora||new Date();
+  var s=String(texto||'').normalize('NFC').replace(/\s+/g,' ').trim();
+  var n=norm(s);
+  var usados=[];
+  var r={texto:'',fecha:'',hora:'',lugar:'',tipo:'evento',dias:[],notas:[],original:s};
+  var hoy=new Date(ahora.getFullYear(),ahora.getMonth(),ahora.getDate());
+  function sumar(k){var x=new Date(hoy);x.setDate(x.getDate()+k);return x;}
+  function libre(a,b){return usados.every(function(u){return b<=u[0]||a>=u[1];});}
+  function buscar(rx,fn){
+    var g=new RegExp(rx.source,'g'),m;
+    while((m=g.exec(n))){
+      if(!m[0].length){g.lastIndex++;continue;}
+      var a=m.index,b=a+m[0].length;
+      if(!libre(a,b))continue;
+      if(fn(m,a,b)!==false){usados.push([a,b]);return m;}
+    }
+    return null;
+  }
+
+  /* ---------- Repetición (rutina) ---------- */
+  buscar(/\b(?:todos\s+los\s+dias|todas\s+las\s+mananas|todas\s+las\s+tardes|todas\s+las\s+noches|cada\s+dia|diariamente|a\s+diario)\b/,function(){r.tipo='rutina';r.dias=[1,2,3,4,5,6,0];});
+  if(r.tipo!=='rutina')buscar(/\b(?:todos\s+los\s+|cada\s+)fines?\s+de\s+semana\b/,function(){r.tipo='rutina';r.dias=[6,0];});
+  if(r.tipo!=='rutina')buscar(new RegExp('\\b(?:todos\\s+los\\s+dias\\s+)?(?:de\\s+)?('+DRX+')\\s+a\\s+('+DRX+')\\b'),function(m){
+    var i=DIAS[m[1]],fin=DIAS[m[2]],out=[];
+    for(var k=0;k<7;k++){out.push(i);if(i===fin)break;i=(i+1)%7;}
+    r.tipo='rutina';r.dias=out;});
+  if(r.tipo!=='rutina')buscar(new RegExp('\\b(?:todos\\s+los|cada)\\s+((?:'+DRX+')(?:\\s*(?:,|y|e)\\s*(?:los\\s+)?(?:'+DRX+'))*)'),function(m){
+    r.tipo='rutina';r.dias=(m[1].match(new RegExp(DRX,'g'))||[]).map(function(d){return DIAS[d];});});
+
+  /* ---------- Fecha ---------- */
+  var fecha=null;
+  if(r.tipo==='evento'){
+    buscar(new RegExp('\\b(?:el\\s+)?(?:dia\\s+)?(?:(?:'+DRX+')\\s+)?'+N+'\\s+de\\s+('+MRX+')(?:\\s+(?:de|del)\\s+(\\d{4}))?\\b'),function(m){
+      var d=num(m[1]),mes=MESES[m[2]],y=m[3]?Number(m[3]):hoy.getFullYear();
+      if(!d||d>31)return false;
+      var f=new Date(y,mes-1,d);if(!m[3]&&f<hoy)f=new Date(y+1,mes-1,d);fecha=f;});
+    if(!fecha)buscar(/\b(?:el\s+)?(?:dia\s+)?(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?\b/,function(m){
+      var d=Number(m[1]),mes=Number(m[2]);if(!d||d>31||!mes||mes>12)return false;
+      var y=m[3]?Number(m[3]):hoy.getFullYear();if(y<100)y+=2000;
+      var f=new Date(y,mes-1,d);if(!m[3]&&f<hoy)f=new Date(y+1,mes-1,d);fecha=f;});
+    if(!fecha)buscar(/\bpasado\s+manana\b/,function(){fecha=sumar(2);});
+    if(!fecha)buscar(/\bmanana\b/,function(m,a){
+      if(/(?:de|por|en|esta|la)\s+(?:la\s+)?$/.test(n.slice(Math.max(0,a-9),a)))return false;
+      fecha=sumar(1);});
+    if(!fecha)buscar(/\b(?:para\s+)?hoy(?:\s+dia)?\b/,function(){fecha=sumar(0);});
+    if(!fecha)buscar(new RegExp('\\b(?:en|dentro\\s+de)\\s+'+N+'\\s+(dias?|semanas?|mes(?:es)?)\\b'),function(m){
+      var k=num(m[1]);if(k==null)return false;
+      if(/^d/.test(m[2]))fecha=sumar(k);
+      else if(/^s/.test(m[2]))fecha=sumar(7*k);
+      else{var f=new Date(hoy);f.setMonth(f.getMonth()+k);fecha=f;}});
+    if(!fecha)buscar(new RegExp('\\b(?:el\\s+)?(?:dia\\s+)?(?:(este|esta|proximo|siguiente)\\s+)?('+DRX+')(?:\\s+(que\\s+viene|proximo|siguiente|de\\s+la\\s+(?:proxima\\s+)?semana(?:\\s+que\\s+viene)?))?\\b'),function(m){
+      var wd=DIAS[m[2]],delta=(wd-hoy.getDay()+7)%7;
+      if(delta===0)delta=(m[1]==='este'||m[1]==='esta')?0:7;
+      if(/proxima\s+semana|semana\s+que\s+viene/.test(m[0])){
+        var aLunes=(8-hoy.getDay())%7||7;delta=aLunes+((wd+6)%7);
+      }
+      fecha=sumar(delta);});
+    if(!fecha)buscar(new RegExp('\\bel\\s+(?:dia\\s+)?'+N+'\\b(?!\\s*(?::|\\.\\d|h\\b|hrs|horas|de\\s+la|am\\b|pm\\b))'),function(m){
+      var d=num(m[1]);if(!d||d>31)return false;
+      var f=new Date(hoy.getFullYear(),hoy.getMonth(),d);
+      if(f<hoy)f=new Date(hoy.getFullYear(),hoy.getMonth()+1,d);fecha=f;});
+    if(!fecha)buscar(/\b(?:la\s+)?(?:proxima\s+semana|semana\s+que\s+viene)\b/,function(){
+      fecha=sumar(7);r.notas.push('Dijiste “la próxima semana”: dejé el mismo día de la semana que viene; ajústalo si es otro.');});
+  }else{
+    buscar(new RegExp('\\b(?:los\\s+)?('+DRX+')\\b'),function(){return true;}); // menciones sueltas de días ya incluidas
+  }
+
+  /* ---------- Hora ---------- */
+  var H=null,MI=0;
+  var MER='(?:\\s*(?:de\\s+la\\s+|del\\s+|en\\s+la\\s+|por\\s+la\\s+)(manana|tarde|noche|madrugada|dia|mediodia)\\b|\\s*(a\\.?\\s?m\\.?|p\\.?\\s?m\\.?)(?![a-z]))?';
+  function fijar(h,mi,merw,ap){
+    h=Number(h);mi=Number(mi||0);
+    if(isNaN(h)||h>24||mi>59)return false;
+    if(h===24)h=0;
+    var w=merw||'',p=(ap||'').replace(/[^ap]/g,'');
+    if(w==='manana'||w==='madrugada'||p==='a'){if(h===12)h=0;}
+    else if(w==='tarde'||w==='noche'||p==='p'){if(h<12)h+=12;}
+    else if(w==='mediodia'){if(h>=1&&h<=3)h+=12;}
+    else if(w==='dia'){if(h>=1&&h<=6)h+=12;}
+    else if(h>=1&&h<=7){h+=12;r.notas.push('Supuse las '+pad(h)+':'+pad(mi)+' (de la tarde). Cámbialo si era en la mañana.');}
+    H=h;MI=mi;
+  }
+  buscar(new RegExp('\\b(?:a\\s+eso\\s+de\\s+las?|como\\s+a\\s+las?|a\\s+las?|para\\s+las?|desde\\s+las?|de\\s+las?)\\s+'+N+
+    '(?:\\s*[:.h]\\s*(\\d{2})|\\s+y\\s+(media|cuarto|'+NI+')|\\s+menos\\s+(cuarto|'+NI+'))?(?:\\s*(?:hrs?\\.?|horas)(?![a-z]))?'+MER),function(m){
+    var h=num(m[1]),mi=0;if(h==null)return false;
+    if(m[2])mi=Number(m[2]);
+    else if(m[3])mi=m[3]==='media'?30:m[3]==='cuarto'?15:num(m[3]);
+    else if(m[4]){var k=m[4]==='cuarto'?15:num(m[4]);if(k==null)return false;h=h-1;mi=60-k;if(h<0)h=23;}
+    if(mi==null)return false;
+    return fijar(h,mi,m[5],m[6]);});
+  if(H===null)buscar(new RegExp('\\b(\\d{1,2})\\s*[:.h]\\s*(\\d{2})\\b(?:\\s*(?:hrs?\\.?|horas)(?![a-z]))?'+MER),function(m){return fijar(m[1],m[2],m[3],m[4]);});
+  if(H===null)buscar(new RegExp('\\b(\\d{1,2})\\s*(?:hrs?\\.?|horas)(?![a-z])'+MER),function(m){return fijar(m[1],0,m[2],m[3]);});
+  if(H===null)buscar(/\b(\d{1,2})\s*(a\.?\s?m\.?|p\.?\s?m\.?)(?![a-z])/,function(m){return fijar(m[1],0,'',m[2]);});
+  if(H===null)buscar(/\b(?:al|a|el|para\s+el)?\s*mediodia\b/,function(){H=12;MI=0;});
+  if(H!==null)r.hora=pad(H)+':'+pad(MI);
+  // "en la mañana / tarde" suelto, sin hora
+  buscar(/\b(?:en|por|de)\s+la\s+(?:manana|tarde|noche)\b/,function(){return true;});
+
+  /* ---------- Lugar ---------- */
+  function finSegmento(desde){
+    var fin=n.length;
+    usados.forEach(function(u){if(u[0]>=desde&&u[0]<fin)fin=u[0];});
+    var rx=/(?:,|;|\.(?:\s|$)|\s(?:consulta|box|piso|oficina|depto|departamento|sala|torre|y\s+(?:despues|luego)|porque|para\s+(?:que|llevar)|con\s+(?:el|la)\s+(?:doctor|doctora|dr|dra)|llevar)\b)/g;
+    rx.lastIndex=desde;var m=rx.exec(n);if(m&&m.index<fin)fin=m.index;
+    return fin;
+  }
+  var lugar='';
+  function tomarLugar(rx,incluirClave){
+    return buscar(rx,function(m,a,b){
+      var ini=incluirClave?a+m[0].length:b,fin=finSegmento(ini);
+      var t=s.slice(ini,fin).trim().replace(/^(?:la|el|en)\s+/i,'').replace(/[\s,.;:]+$/,'');
+      if(t.length<2)return false;
+      lugar=t;usados.push([a,fin]);return true;
+    });
+  }
+  tomarLugar(/\b(?:en\s+la\s+direccion|la\s+direccion\s+es|direccion|ubicad[oa]\s+en|que\s+queda\s+en|queda\s+en)\s*(?:de\s+|:\s*)?/,false);
+  if(!lugar)tomarLugar(/\ben\s+(?:el\s+|la\s+|los\s+|las\s+)?(?=(?:calle|avenida|av\.?|avda|pasaje|camino|clinica|hospital|consultorio|cesfam|cecosf|centro|edificio|torre|colegio|liceo|jardin|universidad|instituto|oficina|mall|notaria|banco|laboratorio|farmacia|integramedica|megasalud|redsalud|vidaintegra|parque|plaza|iglesia|gimnasio|municipalidad|registro\s+civil|metro|estacion)\b)/,false);
+  var extras=[];
+  (function(){
+    var g=/\b(consulta|box|piso|oficina|depto|departamento|sala|torre)\s*(?:n(?:umero|ro|o|°|º)?\.?\s*|#\s*)?([a-z]?\d{1,5}[a-z]?)\b/g,m;
+    while((m=g.exec(n))){
+      var a=m.index,b=a+m[0].length;if(!libre(a,b))continue;
+      usados.push([a,b]);extras.push(m[1].charAt(0).toUpperCase()+m[1].slice(1)+' '+m[2].toUpperCase());
+    }
+  })();
+  if(lugar)lugar=lugar.charAt(0).toUpperCase()+lugar.slice(1);
+  r.lugar=[lugar].concat(extras).filter(Boolean).join(' · ');
+
+  /* ---------- Qué ---------- */
+  usados.sort(function(a,b){return a[0]-b[0];});
+  var partes=[],pos=0;
+  usados.forEach(function(u){if(u[0]>pos)partes.push(s.slice(pos,u[0]));pos=Math.max(pos,u[1]);});
+  partes.push(s.slice(pos));
+  var t=partes.join(' ').replace(/\s+/g,' ').replace(/\s+([,.;:])/g,'$1').trim();
+  var IN=/^(?:[\s,.:;]*(?:oye|hola|isidora|ya|ok|okey|bueno|ya\s+po|porfa(?:vor)?|por\s+favor|anota(?:me|r)?|apunta(?:me|r)?|agenda(?:me|r)?|guarda(?:me|r)?|recuerda(?:me)?|recordarme|acuerdame|no\s+olvidar|no\s+olvides|que|tengo|tendre|tienes|hay|voy\s+a\s+tener|voy\s+a|me\s+toca|debo|necesito|quiero|el|la|los|las|y)\b)+[\s,.:;]*/;
+  var FI=/(?:[\s,.:;-]+(?:el|la|los|las|de|del|en|a|al|y|e|para|con|dia|que|hoy|por|favor|porfa|ya|tipo|como))+[\s,.:;-]*$|[\s,.:;-]+$/;
+  for(var vuelta=0;vuelta<4;vuelta++){
+    var nn=norm(t),m1=nn.match(IN);if(m1&&m1[0].length)t=t.slice(m1[0].length);
+    nn=norm(t);var m2=nn.match(FI);if(m2&&m2[0].length)t=t.slice(0,m2.index);
+    t=t.trim();
+  }
+  t=t.replace(/^una\s+(hora|cita|reunion|reunión)\b/i,function(_,w){return w;});
+  t=t.replace(/\b(el|la|de|en|a)\s+\1\b/gi,'$1').replace(/\s{2,}/g,' ').trim();
+  r.texto=t?t.charAt(0).toUpperCase()+t.slice(1):'';
+
+  /* ---------- Revisión ---------- */
+  if(r.tipo==='evento'){
+    if(!fecha&&r.hora){
+      var ahoraMin=ahora.getHours()*60+ahora.getMinutes(),hm=H*60+MI;
+      fecha=hm>ahoraMin?sumar(0):sumar(1);
+      r.notas.push('No dijiste el día: puse '+(hm>ahoraMin?'hoy':'mañana')+'.');
+    }
+    if(fecha){
+      r.fecha=iso(fecha);
+      if(r.fecha===iso(hoy)&&r.hora&&H*60+MI<=ahora.getHours()*60+ahora.getMinutes())r.notas.push('Esa hora ya pasó hoy: revisa la fecha.');
+    }else r.notas.push('No encontré la fecha: elígela abajo.');
+  }else{
+    if(!r.dias.length)r.notas.push('Elige los días en que se repite.');
+    if(!r.hora)r.notas.push('Falta la hora de la rutina.');
+  }
+  if(!r.texto)r.notas.push('No encontré qué es: escríbelo en “Qué”.');
+  return r;
+}
+function describir(r){
+  if(r.tipo==='rutina')return 'Cada '+r.dias.map(function(d){return NOM_DIA[d];}).join(', ')+(r.hora?' a las '+r.hora:'');
+  if(!r.fecha)return '';
+  var p=r.fecha.split('-'),f=new Date(Number(p[0]),Number(p[1])-1,Number(p[2]));
+  return NOM_DIA[f.getDay()]+' '+Number(p[2])+'/'+Number(p[1])+(r.hora?' a las '+r.hora:'');
+}
+return {interpretar:interpretar,describir:describir};
+})();
+</script>
+<script>
+window.__MARCA__={"id":"isidora","nombre":"Isidora","ns":"isidora","temaDefecto":"claro","medsDefecto":true,"version":"4.2"};
 </script>
 <script>
 (function(){
@@ -709,7 +972,7 @@ function itemsDeFecha(iso){
   });
   D.eventos.forEach(function(e){
     if(e.fecha!==iso)return;
-    out.push({id:'e'+e.id,hora:e.hora||'',texto:e.texto,tipo:'evento',ref:e});
+    out.push({id:'e'+e.id,hora:e.hora||'',texto:e.texto,lugar:e.lugar||'',tipo:'evento',ref:e});
   });
   out.sort(function(a,b){var ha=a.hora||'99:99',hb=b.hora||'99:99';return ha<hb?-1:ha>hb?1:0;});
   return out;
@@ -859,22 +1122,34 @@ function objetivosDeAviso(){
   }
   itemsDeFecha(k).forEach(function(it){
     if(estaHecho(k,it.id))return;
-    var min=aMin(it.hora);
+    var min=aMin(it.hora),cuerpo=it.texto+(it.lugar?' · 📍 '+it.lugar:''),dondeVoz=it.lugar?', en '+it.lugar:'';
     if(min===null){
       var md=aMin(S.horaDia);
       if(it.tipo==='evento'&&md!==null)
-        lista.push({clave:'dia-'+it.id,min:md,tipo:'evento',item:it.id,exacto:false,titulo:'📌 Hoy tienes',cuerpo:it.texto,voz:'Hoy tienes: '+it.texto});
+        lista.push({clave:'dia-'+it.id,min:md,tipo:'evento',item:it.id,exacto:false,titulo:'📌 Hoy tienes',cuerpo:cuerpo,voz:'Hoy tienes: '+it.texto+dondeVoz});
       return;
     }
-    var antes=Number(it.tipo==='rutina'?S.antesRutina:S.antesEvento)||0;
+    var antes=antesDe(it);
     if(antes>0&&min-antes>=0)
       lista.push({clave:'pre-'+it.id,min:min-antes,hasta:min,tipo:it.tipo,item:it.id,exacto:false,
-        titulo:'⏳ En '+fmtDur(antes)+' · '+it.hora,cuerpo:it.texto,voz:'En '+fmtDurVoz(antes)+': '+it.texto});
+        titulo:'⏳ En '+fmtDur(antes)+' · '+it.hora,cuerpo:cuerpo,voz:'En '+fmtDurVoz(antes)+': '+it.texto+dondeVoz});
     lista.push({clave:'act-'+it.id,min:min,tipo:it.tipo,item:it.id,exacto:true,
-      titulo:(it.tipo==='evento'?'📅':'⏰')+' Ahora · '+it.hora,cuerpo:it.texto,voz:'Es hora de: '+it.texto});
+      titulo:(it.tipo==='evento'?'📅':'⏰')+' Ahora · '+it.hora,cuerpo:cuerpo,voz:'Es hora de: '+it.texto+dondeVoz});
+  });
+  // Recordatorio la noche anterior (eventos que lo pidieron)
+  var man=new Date();man.setDate(man.getDate()+1);var km=fechaISO(man);
+  D.eventos.forEach(function(e){
+    if(e.fecha!==km||!e.diaAntes||estaHecho(km,'e'+e.id))return;
+    lista.push({clave:'dan-e'+e.id,min:20*60,tipo:'evento',exacto:false,
+      titulo:'📌 Mañana'+(e.hora?' · '+e.hora:''),cuerpo:e.texto+(e.lugar?' · 📍 '+e.lugar:''),
+      voz:'Mañana tienes: '+e.texto+(e.hora?' a las '+e.hora:'')+(e.lugar?', en '+e.lugar:'')});
   });
   d.posp.forEach(function(p){if(!resuelto(p))lista.push(p);});
   return lista;
+}
+function antesDe(it){
+  if(it.tipo==='evento'&&it.ref&&it.ref.antes!=null&&it.ref.antes!=='')return Number(it.ref.antes)||0;
+  return Number(it.tipo==='rutina'?D.config.sonido.antesRutina:D.config.sonido.antesEvento)||0;
 }
 function resuelto(o){
   var k=hoyISO(),d=dia(k);
@@ -1162,8 +1437,9 @@ function renderHoy(){
     var txt=document.createElement('span');txt.className='tl-texto';txt.textContent=it.texto;
     var tipo=document.createElement('span');tipo.className='tl-tipo '+it.tipo;tipo.textContent=it.tipo;
     cuerpo.appendChild(txt);cuerpo.appendChild(tipo);
+    if(it.lugar){var lu=document.createElement('span');lu.className='tl-lugar';lu.textContent='📍 '+it.lugar;cuerpo.appendChild(lu);}
     if(!hecho&&it.hora&&it.hora>=hm){
-      var antes=Number(it.tipo==='rutina'?S.antesRutina:S.antesEvento)||0;
+      var antes=antesDe(it);
       var sub=document.createElement('span');sub.className='tl-sub';
       sub.textContent='🔔 '+(antes?'aviso '+fmtDur(antes)+' antes y a la hora':'aviso a la hora');
       cuerpo.appendChild(sub);
@@ -1269,7 +1545,7 @@ function renderRutina(){
 }
 function limpiarAvisosItem(id){
   var d=dia(hoyISO());
-  ['pre-','act-','dia-'].forEach(function(p){delete d.avisos[p+id];});
+  ['pre-','act-','dia-','dan-'].forEach(function(p){delete d.avisos[p+id];});
 }
 $('diasTabs').addEventListener('click',function(e){
   var b=e.target.closest('button');if(!b)return;
@@ -1324,10 +1600,12 @@ function pintarEventos(cont,lista,vacio){
     var h=document.createElement('span');h.className='fila-hora violeta';h.textContent=fmtFecha(ev.fecha)+(ev.hora?' '+ev.hora:'');
     var t=document.createElement('span');t.className='fila-texto editable';t.textContent=ev.texto;
     t.setAttribute('role','button');t.tabIndex=0;t.setAttribute('aria-label','Editar '+ev.texto);
+    if(ev.lugar){var lu=document.createElement('span');lu.className='fila-lugar';lu.textContent='📍 '+ev.lugar;t.appendChild(lu);}
     function editar(){
       editorEnFila(fila,[{nombre:'fecha',tipo:'date',valor:ev.fecha,etiqueta:'Fecha'},{nombre:'hora',tipo:'time',valor:ev.hora,etiqueta:'Hora'},
-        {nombre:'texto',tipo:'text',valor:ev.texto,etiqueta:'Evento',max:100}],
-        function(v){if(!v.fecha||!v.texto)return;ev.fecha=v.fecha;ev.hora=v.hora||'';ev.texto=v.texto;limpiarAvisosItem('e'+ev.id);sincronizarPlanHoy();persistir();renderTodo();toast('Evento actualizado');},
+        {nombre:'texto',tipo:'text',valor:ev.texto,etiqueta:'Evento',max:100},
+        {nombre:'lugar',tipo:'text',valor:ev.lugar||'',etiqueta:'Dónde (opcional)',max:140}],
+        function(v){if(!v.fecha||!v.texto)return;ev.fecha=v.fecha;ev.hora=v.hora||'';ev.texto=v.texto;ev.lugar=v.lugar||'';limpiarAvisosItem('e'+ev.id);sincronizarPlanHoy();persistir();renderTodo();toast('Evento actualizado');},
         function(){renderEventos();});
     }
     t.addEventListener('click',editar);
@@ -1421,7 +1699,7 @@ function esc(s){return String(s).replace(/\\/g,'\\\\').replace(/;/g,'\\;').repla
 function selloUTC(){return new Date().toISOString().replace(/[-:]/g,'').split('.')[0]+'Z';}
 function fechaHora(iso,hhmm){return iso.replace(/-/g,'')+'T'+(hhmm||'09:00').replace(':','')+'00';}
 function proximoDiaSemana(ds){var d=new Date(),delta=(ds-d.getDay()+7)%7;d.setDate(d.getDate()+delta);return fechaISO(d);}
-function generarICS(){
+function generarICS(soloEvento){
   var S=D.config.sonido;
   var L=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//'+M.nombre+'//Agenda//ES','CALSCALE:GREGORIAN','METHOD:PUBLISH','X-WR-CALNAME:'+M.nombre];
   var stamp=selloUTC(),BYDAY=['SU','MO','TU','WE','TH','FR','SA'];
@@ -1431,7 +1709,7 @@ function generarICS(){
     if(antes>0)a=alarma('-PT'+antes+'M',txt).concat(a);
     return a;
   }
-  if(D.config.medsOn){
+  if(D.config.medsOn&&!soloEvento){
     [['AM','Medicamento de la mañana'],['PM','Medicamento de la noche']].forEach(function(p){
       var cfg=D.config['med'+p[0]];if(!cfg.hora)return;
       var titulo=cfg.nombre?p[1]+' — '+cfg.nombre:p[1];
@@ -1440,7 +1718,7 @@ function generarICS(){
         alarma('PT0M',titulo),alarma('PT'+VENTANA+'M','Sigue pendiente: '+titulo),['END:VEVENT']);
     });
   }
-  D.rutina.forEach(function(r){
+  (soloEvento?[]:D.rutina).forEach(function(r){
     var ini=proximoDiaSemana(r.dia);
     var ev=['BEGIN:VEVENT','UID:r'+r.id+'-'+M.ns+'@agenda','DTSTAMP:'+stamp,'DTSTART:'+fechaHora(ini,r.hora),'DURATION:PT1H',
       plegar('SUMMARY:'+esc(r.texto)),'RRULE:FREQ=WEEKLY;BYDAY='+BYDAY[r.dia]];
@@ -1448,14 +1726,21 @@ function generarICS(){
     if(fut.length)ev.push(plegar('EXDATE:'+fut.map(function(f){return fechaHora(f,r.hora);}).join(',')));
     L=L.concat(ev,alarmas(Number(S.antesRutina)||0,r.texto),['END:VEVENT']);
   });
-  D.eventos.forEach(function(e){
+  (soloEvento?[soloEvento]:D.eventos).forEach(function(e){
     var ev=['BEGIN:VEVENT','UID:e'+e.id+'-'+M.ns+'@agenda','DTSTAMP:'+stamp,plegar('SUMMARY:'+esc(e.texto))];
-    if(e.hora){ev=ev.concat(['DTSTART:'+fechaHora(e.fecha,e.hora),'DURATION:PT1H']);L=L.concat(ev,alarmas(Number(S.antesEvento)||0,e.texto),['END:VEVENT']);}
-    else{
+    if(e.lugar)ev.push(plegar('LOCATION:'+esc(e.lugar)));
+    var txt=e.texto+(e.lugar?' — '+e.lugar:''),al;
+    if(e.hora){
+      ev=ev.concat(['DTSTART:'+fechaHora(e.fecha,e.hora),'DURATION:PT1H']);
+      al=alarmas(antesDe({tipo:'evento',ref:e}),txt);
+      if(e.diaAntes)al=alarma('-PT'+(aMin(e.hora)+240)+'M','Mañana: '+txt).concat(al); // 20:00 del día anterior
+    }else{
       var hd=aMin(S.horaDia)||540;
       ev=ev.concat(['DTSTART;VALUE=DATE:'+e.fecha.replace(/-/g,''),'DURATION:P1D']);
-      L=L.concat(ev,alarma('PT'+Math.floor(hd/60)+'H'+(hd%60)+'M',e.texto),['END:VEVENT']);
+      al=alarma('PT'+Math.floor(hd/60)+'H'+(hd%60)+'M',txt);
+      if(e.diaAntes)al=alarma('-PT4H','Mañana: '+txt).concat(al);
     }
+    L=L.concat(ev,al,['END:VEVENT']);
   });
   L.push('END:VCALENDAR');
   return L.join('\r\n');
@@ -1610,6 +1895,122 @@ $('btnProbarAviso').addEventListener('click',async function(){
   notificarSistema(o,!S.on,true);
   renderAvisosSistema();
 });
+
+/* ================= Dictado por voz ================= */
+var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+var rec=null,escuchando=false,vozBase='',vozIdioma='es-CL',vozRes=null,vpDiasSel=[];
+function vozEstado(t,error){var e=$('vozEstado');e.textContent=t||'';e.classList.toggle('error',!!error);}
+function micUI(){
+  var b=$('btnMic');b.classList.toggle('escuchando',escuchando);
+  b.textContent=escuchando?'⏹':'🎙️';b.setAttribute('aria-label',escuchando?'Terminar el dictado':'Dictar con el micrófono');
+}
+function empezarDictado(){
+  if(!SR){
+    $('vozTexto').focus();
+    vozEstado('Este navegador no trae dictado integrado: toca el 🎤 del teclado, habla y luego toca «Entender y anotar».');
+    return;
+  }
+  if(escuchando){try{rec.stop();}catch(e){}return;}
+  try{rec=new SR();}catch(e){vozEstado('No se pudo iniciar el micrófono. Usa el 🎤 del teclado.',true);return;}
+  rec.lang=vozIdioma;rec.interimResults=true;rec.continuous=false;rec.maxAlternatives=1;
+  vozBase=$('vozTexto').value.trim();
+  var huboTexto=false;
+  rec.onresult=function(e){
+    var fin='',tmp='';
+    for(var i=0;i<e.results.length;i++){var t=e.results[i][0].transcript;if(e.results[i].isFinal)fin+=t;else tmp+=t;}
+    var todo=(fin+' '+tmp).replace(/\s+/g,' ').trim();if(todo)huboTexto=true;
+    $('vozTexto').value=(vozBase?vozBase+' ':'')+todo;
+  };
+  rec.onerror=function(e){
+    if(e.error==='language-not-supported'&&vozIdioma!=='es-ES'){vozIdioma='es-ES';vozEstado('Cambié el idioma del dictado a español de España. Toca el micrófono otra vez.');return;}
+    var msg={'not-allowed':'El navegador no tiene permiso para usar el micrófono. Actívalo en los ajustes del navegador, o usa el 🎤 del teclado.',
+      'service-not-allowed':'El dictado no está disponible aquí. Usa el 🎤 del teclado y luego toca «Entender y anotar».',
+      'no-speech':'No te escuché. Toca el micrófono e intenta de nuevo.',
+      'audio-capture':'No se encontró un micrófono.',
+      'network':'El dictado necesita internet. Sin conexión, usa el 🎤 del teclado.'}[e.error];
+    if(e.error!=='aborted')vozEstado(msg||'No se pudo dictar ('+e.error+'). Usa el 🎤 del teclado.',true);
+  };
+  rec.onend=function(){escuchando=false;micUI();if(huboTexto){vozEstado('');interpretarVoz();}};
+  try{rec.start();escuchando=true;micUI();vozEstado('Te escucho… habla con calma. Toca ⏹ al terminar.');vibrar([40]);}
+  catch(e){vozEstado('No se pudo iniciar el micrófono. Usa el 🎤 del teclado.',true);}
+}
+function pintarVpDias(){
+  document.querySelectorAll('#vpDias button').forEach(function(b){
+    var on=vpDiasSel.indexOf(Number(b.dataset.d))>=0;b.classList.toggle('on',on);b.setAttribute('aria-pressed',String(on));
+  });
+}
+function esRutinaVoz(){return !!(vozRes&&vozRes.tipo==='rutina');}
+function pintarVpResumen(){
+  var r={tipo:esRutinaVoz()?'rutina':'evento',fecha:$('vpFecha').value,hora:$('vpHora').value,dias:vpDiasSel};
+  var d=window.IsidoraVoz.describir(r);
+  $('vpResumen').textContent=(r.tipo==='rutina'?'🔁 ':'📅 ')+(d||'Falta la fecha');
+}
+function interpretarVoz(){
+  var txt=$('vozTexto').value.trim();
+  if(!txt){vozEstado('Escribe o dicta qué quieres anotar.',true);$('vozTexto').focus();return;}
+  var r=window.IsidoraVoz.interpretar(txt,new Date());
+  vozRes=r;
+  var rut=r.tipo==='rutina';
+  $('vpTexto').value=r.texto;$('vpHora').value=r.hora||'';$('vpLugar').value=r.lugar||'';$('vpFecha').value=r.fecha||'';
+  $('vpAntes').value='';$('vpDiaAntes').checked=true;
+  $('vpFechaL').style.display=rut?'none':'';$('vpDiasL').style.display=rut?'':'none';
+  $('vpAntesL').style.display=rut?'none':'';$('vpDiaAntesL').style.display=rut?'none':'';
+  vpDiasSel=r.dias.slice();pintarVpDias();pintarVpResumen();
+  var cont=$('vpNotas');cont.innerHTML='';
+  r.notas.forEach(function(n){var d=document.createElement('div');d.textContent=n;cont.appendChild(d);});
+  $('vozPreview').style.display='';$('vozAcciones').style.display='none';
+  try{$('vozPreview').scrollIntoView({behavior:'smooth',block:'nearest'});}catch(e){}
+}
+function cerrarVoz(limpiar){
+  $('vozPreview').style.display='none';$('vozAcciones').style.display='';
+  if(limpiar)$('vozTexto').value='';
+  vozRes=null;vozEstado('');
+}
+function guardarVoz(alCalendario){
+  if(!vozRes)return;
+  var texto=$('vpTexto').value.trim(),hora=$('vpHora').value,lugar=$('vpLugar').value.trim(),S=D.config.sonido,msg;
+  if(!texto){$('vpTexto').focus();toast('Escribe qué es.');return;}
+  if(esRutinaVoz()){
+    if(!vpDiasSel.length){toast('Elige al menos un día.');return;}
+    if(!hora){$('vpHora').focus();toast('Falta la hora de la rutina.');return;}
+    var tx=texto+(lugar?' · '+lugar:'');
+    vpDiasSel.forEach(function(d){D.rutina.push({id:idNuevo(),dia:d,hora:hora,texto:tx,omitir:[]});});
+    msg=window.IsidoraVoz.describir({tipo:'rutina',dias:vpDiasSel,hora:hora})+'. Te aviso '+(Number(S.antesRutina)?fmtDur(Number(S.antesRutina))+' antes y ':'')+'a la hora.';
+  }else{
+    var f=$('vpFecha').value;
+    if(!f){$('vpFecha').focus();toast('Elige la fecha.');return;}
+    var a=$('vpAntes').value;
+    var ev={id:idNuevo(),fecha:f,hora:hora||'',texto:texto,lugar:lugar,antes:a===''?null:Number(a),diaAntes:$('vpDiaAntes').checked,origen:'voz'};
+    D.eventos.push(ev);
+    var ant=antesDe({tipo:'evento',ref:ev});
+    msg=window.IsidoraVoz.describir({tipo:'evento',fecha:f,hora:hora})+(lugar?' · '+lugar:'')+'. '+
+      (hora?'Te aviso '+(ant?fmtDur(ant)+' antes y ':'')+'a la hora':'Te aviso ese día a las '+S.horaDia)+
+      (ev.diaAntes?', y la noche anterior a las 20:00':'')+'.';
+    if(alCalendario){
+      var ok=descargar(M.ns+'-'+f+'.ics',generarICS(ev),'text/calendar;charset=utf-8');
+      if(ok)msg+=' Abre el archivo descargado para sumarlo al calendario del teléfono.';
+    }
+  }
+  sincronizarPlanHoy();persistir();renderTodo();
+  cerrarVoz(true);
+  mostrarBanner('✓ Anotado: '+texto,msg,10000);
+  if(D.config.sonido.on)Sonido.tocar('marimba',D.config.sonido.volumen*0.6);
+}
+$('btnMic').addEventListener('click',empezarDictado);
+$('btnInterpretar').addEventListener('click',interpretarVoz);
+$('vozTexto').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();interpretarVoz();}});
+$('vpDias').addEventListener('click',function(e){
+  var b=e.target.closest('button');if(!b)return;e.preventDefault();
+  var d=Number(b.dataset.d),i=vpDiasSel.indexOf(d);
+  if(i>=0)vpDiasSel.splice(i,1);else vpDiasSel.push(d);
+  pintarVpDias();pintarVpResumen();
+});
+['vpFecha','vpHora'].forEach(function(id){$(id).addEventListener('change',pintarVpResumen);});
+$('vpGuardar').addEventListener('click',function(){guardarVoz(false);});
+$('vpCal').addEventListener('click',function(){guardarVoz(true);});
+$('vpCancelar').addEventListener('click',function(){cerrarVoz(false);});
+$('btnIrDictar').addEventListener('click',function(){irA('hoy');empezarDictado();});
+if(!SR)$('btnMic').title='Usa el micrófono del teclado';
 
 /* ================= Navegación ================= */
 function irA(sec){
