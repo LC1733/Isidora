@@ -740,7 +740,10 @@ function interpretar(texto,ahora){
       else{var f=new Date(hoy);f.setMonth(f.getMonth()+k);fecha=f;}});
     if(!fecha)buscar(new RegExp('\\b(?:el\\s+)?(?:dia\\s+)?(?:(este|esta|proximo|siguiente)\\s+)?('+DRX+')(?:\\s+(que\\s+viene|proximo|siguiente|de\\s+la\\s+(?:proxima\\s+)?semana(?:\\s+que\\s+viene)?))?\\b'),function(m){
       var wd=DIAS[m[2]],delta=(wd-hoy.getDay()+7)%7;
-      if(delta===0)delta=(m[1]==='este'||m[1]==='esta')?0:7;
+      if(delta===0){
+        delta=(m[1]==='este'||m[1]==='esta')?0:7;
+        if(delta===7)r.notas.push('Hoy es '+NOM_DIA[wd]+': lo dejé para el de la próxima semana. Si es hoy, cambia la fecha.');
+      }
       if(/proxima\s+semana|semana\s+que\s+viene/.test(m[0])){
         var aLunes=(8-hoy.getDay())%7||7;delta=aLunes+((wd+6)%7);
       }
@@ -861,7 +864,7 @@ return {interpretar:interpretar,describir:describir};
 })();
 </script>
 <script>
-window.__MARCA__={"id":"isidora","nombre":"Isidora","ns":"isidora","temaDefecto":"claro","medsDefecto":true,"version":"4.2"};
+window.__MARCA__={"id":"isidora","nombre":"Isidora","ns":"isidora","temaDefecto":"claro","medsDefecto":true,"version":"4.3"};
 </script>
 <script>
 (function(){
@@ -1910,29 +1913,95 @@ function empezarDictado(){
     vozEstado('Este navegador no trae dictado integrado: toca el 🎤 del teclado, habla y luego toca «Entender y anotar».');
     return;
   }
-  if(escuchando){try{rec.stop();}catch(e){}return;}
-  try{rec=new SR();}catch(e){vozEstado('No se pudo iniciar el micrófono. Usa el 🎤 del teclado.',true);return;}
-  rec.lang=vozIdioma;rec.interimResults=true;rec.continuous=false;rec.maxAlternatives=1;
-  vozBase=$('vozTexto').value.trim();
-  var huboTexto=false;
-  rec.onresult=function(e){
-    var fin='',tmp='';
-    for(var i=0;i<e.results.length;i++){var t=e.results[i][0].transcript;if(e.results[i].isFinal)fin+=t;else tmp+=t;}
-    var todo=(fin+' '+tmp).replace(/\s+/g,' ').trim();if(todo)huboTexto=true;
-    $('vozTexto').value=(vozBase?vozBase+' ':'')+todo;
+  if(escuchando){terminarDictado(true);return;}
+  sesionVoz={activa:true,porUsuario:false,inicio:Date.now(),ultimaVoz:Date.now(),hubo:false,fallosRapidos:0,error:null};
+  escuchando=true;micUI();vibrar([40]);
+  clearInterval(relojVoz);relojVoz=setInterval(tickVoz,500);
+  tickVoz();
+  arrancarRec();
+}
+/* El navegador corta el reconocimiento en cada pausa (o a los pocos segundos).
+   Para que pueda hablar con calma, se reinicia solo hasta que toque ⏹,
+   pasen 3 minutos, o haya silencio largo después de haber hablado. */
+var VOZ_MAX=180000,VOZ_SILENCIO=12000,VOZ_SIN_HABLA=20000;
+var sesionVoz=null,relojVoz=null;
+function tickVoz(){
+  if(!sesionVoz||!sesionVoz.activa)return;
+  var t=Date.now(),seg=Math.floor((t-sesionVoz.inicio)/1000);
+  vozEstado('🔴 Escuchando '+Math.floor(seg/60)+':'+String(seg%60).padStart(2,'0')+' — habla con calma, puedes hacer pausas. Toca ⏹ al terminar.');
+  if(t-sesionVoz.inicio>VOZ_MAX)terminarDictado(false);
+  else if(sesionVoz.hubo&&t-sesionVoz.ultimaVoz>VOZ_SILENCIO)terminarDictado(false);
+  else if(!sesionVoz.hubo&&t-sesionVoz.inicio>VOZ_SIN_HABLA){sesionVoz.error='no-speech';terminarDictado(false);}
+}
+function unirFinales(lista){
+  // Algunos Android repiten frases ya reconocidas: se descartan las repeticiones.
+  var out='';
+  lista.forEach(function(t){
+    t=t.trim();if(!t)return;
+    var o=out.trim(),tl=t.toLowerCase(),ol=o.toLowerCase();
+    if(!o)out=t;
+    else if(tl.indexOf(ol)===0)out=t;
+    else if(ol.slice(-tl.length)===tl)return;
+    else out=o+' '+t;
+  });
+  return out;
+}
+function arrancarRec(){
+  if(!sesionVoz||!sesionVoz.activa)return;
+  var r;
+  try{r=new SR();}catch(e){sesionVoz.error='start';terminarDictado(false);return;}
+  rec=r;
+  r.lang=vozIdioma;r.interimResults=true;r.continuous=true;r.maxAlternatives=1;
+  var base=$('vozTexto').value.trim(),nacio=Date.now();
+  r.onresult=function(e){
+    if(rec!==r)return;
+    var finales=[],tmp='';
+    for(var i=0;i<e.results.length;i++){var t=e.results[i][0].transcript;if(e.results[i].isFinal)finales.push(t);else tmp+=' '+t;}
+    var todo=(unirFinales(finales)+' '+tmp).replace(/\s+/g,' ').trim();
+    if(todo){sesionVoz.hubo=true;sesionVoz.ultimaVoz=Date.now();}
+    $('vozTexto').value=(base?base+' ':'')+todo;
   };
-  rec.onerror=function(e){
-    if(e.error==='language-not-supported'&&vozIdioma!=='es-ES'){vozIdioma='es-ES';vozEstado('Cambié el idioma del dictado a español de España. Toca el micrófono otra vez.');return;}
-    var msg={'not-allowed':'El navegador no tiene permiso para usar el micrófono. Actívalo en los ajustes del navegador, o usa el 🎤 del teclado.',
-      'service-not-allowed':'El dictado no está disponible aquí. Usa el 🎤 del teclado y luego toca «Entender y anotar».',
-      'no-speech':'No te escuché. Toca el micrófono e intenta de nuevo.',
-      'audio-capture':'No se encontró un micrófono.',
-      'network':'El dictado necesita internet. Sin conexión, usa el 🎤 del teclado.'}[e.error];
-    if(e.error!=='aborted')vozEstado(msg||'No se pudo dictar ('+e.error+'). Usa el 🎤 del teclado.',true);
+  r.onerror=function(e){
+    if(rec!==r)return;
+    if(e.error==='no-speech'||e.error==='aborted')return; // se reinicia en onend
+    if(e.error==='language-not-supported'&&vozIdioma!=='es-ES'){vozIdioma='es-ES';return;}
+    sesionVoz.error=e.error;sesionVoz.activa=false;
   };
-  rec.onend=function(){escuchando=false;micUI();if(huboTexto){vozEstado('');interpretarVoz();}};
-  try{rec.start();escuchando=true;micUI();vozEstado('Te escucho… habla con calma. Toca ⏹ al terminar.');vibrar([40]);}
-  catch(e){vozEstado('No se pudo iniciar el micrófono. Usa el 🎤 del teclado.',true);}
+  r.onend=function(){
+    if(rec!==r)return;
+    if(sesionVoz&&sesionVoz.activa){
+      sesionVoz.fallosRapidos=(Date.now()-nacio<1200)?sesionVoz.fallosRapidos+1:0;
+      if(sesionVoz.fallosRapidos>=4){sesionVoz.error=sesionVoz.error||'start';terminarDictado(false);return;}
+      setTimeout(arrancarRec,120);
+      return;
+    }
+    cerrarSesionVoz();
+  };
+  try{r.start();}catch(e){sesionVoz.error='start';terminarDictado(false);}
+}
+function terminarDictado(porUsuario){
+  if(!sesionVoz)return;
+  sesionVoz.activa=false;sesionVoz.porUsuario=!!porUsuario;
+  var r=rec;
+  if(r){try{r.stop();}catch(e){}}
+  // Si el navegador no avisa el fin, se cierra igual
+  setTimeout(function(){if(sesionVoz&&rec===r)cerrarSesionVoz();},1500);
+}
+function cerrarSesionVoz(){
+  if(!sesionVoz)return;
+  var s=sesionVoz;sesionVoz=null;rec=null;
+  clearInterval(relojVoz);relojVoz=null;
+  escuchando=false;micUI();
+  var hayTexto=!!$('vozTexto').value.trim();
+  var msg={'not-allowed':'El navegador no tiene permiso para usar el micrófono. Actívalo en los ajustes del navegador, o usa el 🎤 del teclado.',
+    'service-not-allowed':'El dictado no está disponible aquí. Usa el 🎤 del teclado y luego toca «Entender y anotar».',
+    'no-speech':'No te escuché. Toca el micrófono e intenta de nuevo.',
+    'audio-capture':'No se encontró un micrófono.',
+    'network':'El dictado necesita internet. Sin conexión, usa el 🎤 del teclado.',
+    'start':'El micrófono se detuvo. Si vuelve a pasar, usa el 🎤 del teclado.'}[s.error];
+  if(s.hubo&&hayTexto){vozEstado('');interpretarVoz();}
+  else if(s.error)vozEstado(msg||'No se pudo dictar ('+s.error+'). Usa el 🎤 del teclado.',true);
+  else vozEstado('');
 }
 function pintarVpDias(){
   document.querySelectorAll('#vpDias button').forEach(function(b){
